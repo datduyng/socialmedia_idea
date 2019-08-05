@@ -136,7 +136,7 @@ app.post('/submitUserFeedback', function(request, response) {
 ******************************signup*********************************
 **********************************************************************/
 app.get('/signup', function(request, response) {
-  response.render(__dirname + '/views/index.ejs', {G:G});
+  response.render(__dirname + '/views/signup.ejs', {G:G});
 }).post('/signup', function(request, response) {
   G.session = request.session;
   var params = request.body;
@@ -506,11 +506,23 @@ app.get('/admin/query', (request, response) => {
 /********************************************************
 ********************************************************/
 
-app.get('/i', (request, response) => {
+app.get('/i', async (request, response) => {
   console.log(' /i ideasession', request.session);
   moment.tz.guess(true);
   G.session = request.session;
   var params = request.query;
+  
+  var user_id = null;
+  if(G.session.user_id == null){//if session does not exist then query for the post creator
+    let q = `SELECT user__id FROM posts WHERE id=?`;
+    user_id = (await db.allAsync(q, [params.post_id]))[0].user__id;
+    
+    console.log('in user_id', user_id);
+  }else{
+    user_id = G.session.user_id;
+  }
+  console.log('user_id', user_id);
+  
   //check user viewing status
   let q = `SELECT COUNT(*) as count 
             FROM user_post_action upa
@@ -519,13 +531,13 @@ app.get('/i', (request, response) => {
             WHERE ua.user__id=? AND 
                   upa.post__id=? AND 
                   upa.user_post_action_select__id='1'`;
-  db.all(q, [G.session.user_id, params.post_id], function (error, count) {
+  db.all(q, [user_id, params.post_id], function (error, count) {
     count = count[0].count;
     console.log('get first count', count);
     if(count == 0){
       console.log('this', this);
       let q = `INSERT INTO user_action (user__id, user_action_select__id) VALUES (?, ?)`;
-      db.run(q, [G.session.user_id, 2], function(err) {//change this manualy. '2' is a magic number
+      db.run(q, [user_id, 2], function(err) {//change this manualy. '2' is a magic number
         let q = `INSERT INTO user_post_action (post__id, user_action__id, user_post_action_select__id) 
                   VALUES (?, ?, ?)`;
         if(err){
