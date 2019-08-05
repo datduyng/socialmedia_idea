@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+
+
+    <% include ./include.css.ejs %>
+  </head>
+  <body>
+    <% include ./include.js.ejs %>
+<!--     start nav bar -->
+    <% include ./nav.ejs %>
+    <script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5d409348919c2c0012611ed5&product=sticky-share-buttons' async='async'></script>
+    <br>
+<!--     end nav -->
+    <div class="container mt-md-5">
+    <div class="row">
+       <div class="col-lg-8">
+          <!-- the actual blog post: title/author/date/content -->
+          <h1><a href=""><%= post.title %></a></h1>
+          <p class="lead"><i class="fa fa-user"></i> by <a href="">Author</a></p>
+          <hr>
+          <p><i class="fa fa-calendar"></i> Posted on <%=post.formatted_create_timestamp%></p>
+          <p><i class="fa fa-tags"></i> Tags: 
+            <% tags.forEach((tag, index) => {%>
+              <a href=""><span class="badge badge-info"><%=tag.tag%></span></a> 
+            <% }) %></p>
+         
+         
+          <hr>
+          <div class='row'>
+            <div class='col-md-6'>
+              <picture>
+                <img src="<%= post.content.pin %>" class="img-fluid img-thumbnail" alt="...">
+              </picture>
+            </div>
+            <div class='col-md-6'>
+              <div class='row'>
+                <%= view_count %> viewed <br>
+                <%= star_count %> starred
+              </div>
+            </div>
+          </div>
+
+          <br><br>
+         
+         <div class='row'>
+           <p>
+             <%= post.content.text %>
+           </p>
+         </div>
+               <br><br>
+          <div class="sharethis-inline-share-buttons"></div>
+
+
+          <br/>
+          <hr>
+          <!-- the comment box -->
+          <div id="disqus_thread"></div>
+          <script>
+             /**
+             *  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+             *  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+             /*
+             var disqus_config = function () {
+             this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+             this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+             };
+             */
+             (function() { // DON'T EDIT BELOW THIS LINE
+             var d = document, s = d.createElement('script');
+             s.src = 'https://ideabook-glitch-com.disqus.com/embed.js';
+             s.setAttribute('data-timestamp', +new Date());
+             (d.head || d.body).appendChild(s);
+             })();
+          </script>
+          <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+       </div>
+      
+      
+      
+       <div class="col-lg-4">
+
+
+            <div class="card my-4">
+              <div class="card-body">
+                <h4><i class="fa fa-fire"></i> Relevant Tags</h4>
+                <div class="row">
+                  <div class="col-lg-12">
+                      <% tags.forEach((tag, index) => {%>
+                          <a href="#"><span class="badge badge-info"><%=tag.tag%></span></a>
+                      <% }) %>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          <!-- /well -->
+          <div class="card my-4">
+            <div class='card-body'>
+              <h4><i class="fa fa-fire"></i> Related post</h4>
+              <ul id='related-post-list'>
+                <related-post-item
+                        v-for="(post, index) in related_posts"
+                          :post_id="post.post_id" 
+                          :title="post.title">
+                </related-post-item>
+              </ul>
+            </div>
+          </div>
+          <!-- /well -->
+
+          <!-- /well -->
+          <div class="well">
+             <h4><i class="fa fa-thumbs-o-up"></i> Follow me!</h4>
+             <ul>
+                <p><a title="Facebook" href=""><span class="fa-stack fa-lg"><i class="fa fa-square-o fa-stack-2x"></i><i class="fa fa-facebook fa-stack-1x"></i></span></a> <a title="Twitter" href=""><span class="fa-stack fa-lg"><i class="fa fa-square-o fa-stack-2x"></i><i class="fa fa-twitter fa-stack-1x"></i></span></a> <a title="Google+" href=""><span class="fa-stack fa-lg"><i class="fa fa-square-o fa-stack-2x"></i><i class="fa fa-google-plus fa-stack-1x"></i></span></a> <a title="Linkedin" href=""><span class="fa-stack fa-lg"><i class="fa fa-square-o fa-stack-2x"></i><i class="fa fa-linkedin fa-stack-1x"></i></span></a> <a title="GitHub" href=""><span class="fa-stack fa-lg"><i class="fa fa-square-o fa-stack-2x"></i><i class="fa fa-github fa-stack-1x"></i></span></a> <a title="Bitbucket" href=""><span class="fa-stack fa-lg"><i class="fa fa-square-o fa-stack-2x"></i><i class="fa fa-bitbucket fa-stack-1x"></i></span></a></p>
+             </ul>
+          </div>
+          <!-- /well -->
+
+
+       </div>
+    </div>
+    <hr>
+    <script src="/client.js"></script> 
+    <script>
+      var related_post_list = new Vue({
+        el: '#related-post-list', 
+        data: {
+          current_post_id: <%=post.id%>,
+          related_posts: []
+        },
+        methods: {
+          get_related_posts: function(){
+            let data = {
+              post_id : this.current_post_id
+            };
+        console.log('current_post_id', this.current_post_id);
+            $.get('/getRecommendedPostBaseOnTag', data, (response) => {
+              console.log('getRelatedPOst', response);
+              this.related_posts = JSON.parse(response);
+            });
+          }
+        },
+        created: function() {
+          this.get_related_posts();
+        }
+      });
+    </script>
+    
+      
+    <% include ./footers.ejs %>
+    

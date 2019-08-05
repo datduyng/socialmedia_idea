@@ -1,0 +1,193 @@
+
+<% include ./include.css.ejs %>
+<link rel='stylesheet' href="<%=G.CDN%>/pinterest_grid/pinterest_grid.css" />
+<% include ./include.js.ejs %>
+<% include ./nav.ejs %>
+
+
+<!--     <form action='/signout' method='get'>
+      <input type = "submit" class="db mv2 pa1 w5" value="Sign out">
+    </form>
+    <br>
+    <form action='/personalinfo' method='get'>
+      <input type = "submit" class="db mv2 pa1 w5" value="Personal info">
+    </form> -->
+
+<style>
+
+</style>
+
+<br><br>
+<div class='wrapper'>
+  <div class="container gedf-wrapper mt-5">
+
+    <div class="row justify-content-center">
+
+      <!-- Left column -->
+      <div class="col-lg-8 gedf-main">
+
+        <!--  >>>>>>>Upload post Panel -->
+        <button type='button' class="btn btn-primary btn-lg btn-block" onclick="createUploadPostBootbox()">
+          <i class="fa fa-pencil"></i> Share your thought
+        </button>
+        <!--  <<<<<<Upload post Panel -->
+        
+        <hr>
+        <h3>All activities</h3>
+
+        <!-- >>>>list of card -->
+        <div class='row'>
+          <div id='post-list-dashboard' ref='post_list_dashboard' class="white-deck">
+            <div class='grid-sizer col-md-4'></div>
+            <div class="gutter-sizer"></div>
+            <!--- >>>>>>Post-->
+            <post-item v-for="(post, index) in posts"
+                       :post_id='post.post_id'
+                       :title='post.title'
+                       :username='post.name'
+                       :star_status = 'post.star_status'
+                       :content='post.content'
+                       :tags = 'post.tags'
+                       :create_timestamp='post.create_timestamp'>
+            </post-item>
+            <!--- <<<<<<<Post-->
+          </div>
+          <!-- <<<<<list of card -->
+        </div>
+
+      </div>
+      <!-- Left column -->
+
+      <!-- Right column -->
+
+
+
+
+
+      <div class="col-lg-4">
+
+        <div class="notification-list"> 
+          <div class="card gedf-card">
+            <div class="card-body">
+              <h5 class="card-title">Discover other innovator(Constructing) </h5>
+              <div class="list-group">
+                <a href="#" class="list-group-item list-group-item-action active">
+                  <div class="notification-info">
+                    <div class="notification-list-user-img"><img src="https://picsum.photos/id/354/100/100" alt="" class="user-avatar-md rounded-circle"></div>
+                    <div class="notification-list-user-block ml-2">
+                      <span class="notification-list-user-name">Jeremy Rakestraw</span>
+                      <div class="notification-date">2 min ago</div>
+                    </div>
+                  </div>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">
+                  <div class="notification-info">
+                    <div class="notification-list-user-img"><img src="https://picsum.photos/id/122/100/100" alt="" class="user-avatar-md rounded-circle"></div>
+                    <div class="notification-list-user-block ml-2">
+                      <span class="notification-list-user-name">John Abraham </span>
+                      <div class="notification-date">2 days ago</div>
+                    </div>
+                  </div>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">
+                  <div class="notification-info">
+                    <div class="notification-list-user-img"><img src="https://picsum.photos/id/123/100/100" alt="" class="user-avatar-md rounded-circle"></div>
+                    <div class="notification-list-user-block ml-2">
+                      <span class="notification-list-user-name">Monaan Pechi</span> is watching your main repository
+                      <div class="notification-date">2 min ago</div>
+                    </div>
+                  </div>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">
+                  <div class="notification-info">
+                    <div class="notification-list-user-img"><img src="https://picsum.photos/id/421/100/100" alt="" class="user-avatar-md rounded-circle"></div>
+                    <div class="notification-list-user-block ml-2">
+                      <span class="notification-list-user-name">Jessica Caruso</span>
+                      <div class="notification-date">2 min ago</div>
+                    </div>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card gedf-card">
+          <div class="card-body">
+            <h5 class="card-title">Top Idealify Innovator(Constructing) </h5>
+            <h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>
+            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.
+            </p>
+            <a href="#" class="card-link">Card link</a>
+            <a href="#" class="card-link">Another link</a>
+          </div>
+        </div>
+
+
+        <!-- >>>>>>>Discover Friends Board -->
+        <div id='user-list' class="card gedf-card">
+          <div class="card-body">
+            <h5 class="card-title">Discover other innovator mind</h5>
+            <ul class="list-group notification-list">
+              <user-item v-for="(user, index) in users"
+                         v-on:delete-row="addFriend(index)"
+                         :id='user.id'
+                         :name='user.username'
+                         :email='user.email'>
+              </user-item>
+            </ul>
+          </div>
+        </div>
+        <!-- <<<<<<<<Discover Friends Board -->
+
+        <!-- >>>>>>>Friends Board -->
+        <div id='friend-list' class="card gedf-card">
+          <div class="card-body">
+            <h5 class="card-title">Say hello to your friends</h5>
+            <ul class="list-group notification-list">
+              <friendlist-item v-for="(user, index) in users"
+                               :id='user.id'
+                               :name='user.username'>
+              </friendlist-item>
+            </ul>
+          </div>
+        </div>
+        <!-- <<<<<<<<Friends Board -->
+
+        <div class="card gedf-card">
+          <div class="card-body">
+            <h5 class="card-title">Idealify timelines(Constructing) </h5>
+            <h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>
+            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.
+            </p>
+            <a href="#" class="card-link">Card link</a>
+            <a href="#" class="card-link">Another link</a>
+          </div>
+        </div>
+
+
+
+
+
+      </div>
+      <!-- Right column -->
+
+    </div>
+  </div>
+
+
+
+
+
+  <script>
+    $(document).ready(function() {
+      $('#user-list .list-group').slimScroll({height:'450px'});
+    });
+  </script>
+  <script src="/client.js"></script>
+</div>
+
+
+
+
+<% include ./footers.ejs %>
