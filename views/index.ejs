@@ -1,0 +1,346 @@
+<!-- Header	 -->
+<html>
+
+  
+<style>
+@import url('https://fonts.googleapis.com/css?family=Nova+Flat');
+
+.error {
+  color: #f71313;
+}
+
+
+*{
+	font-family: 'Nova Flat', cursive;
+}
+
+body,html{
+	margin:0 auto;
+	width: 100%;
+	height: 100%;
+	padding: 0;
+	background: #ECEFF1;
+}
+
+.row{
+	margin: 0 auto;
+}
+
+/*<Header CSS>*/
+
+.heading{
+	width: 100%
+	padding: 0px;
+}
+
+.heading h1{
+	position: relative;
+	float: left;
+	left: 5%;
+}
+
+.heading #login{
+	position: relative;
+	top: 24px;
+	right: 5px;
+}
+
+/*<Header CSS END>*/
+
+
+.first-box{
+/* 	height : auto; */
+	width: 100%;
+	padding: 15px 0 15px 0px; 
+/* 	background: #ECEFF1; */
+}
+
+/*<About CSS>*/
+
+.first-box .about-box{
+	margin-left: 2%;
+	border-radius: 10px;
+	/*background: #E8F5E9;*/
+	min-height: 500px;
+	height: auto;   
+}
+
+.first-box .about-box .content{
+	width: 80%;
+	padding:10px 20px 10px 20px;
+	color: #fff;
+	margin: 10px 0 10px 0;
+	border-radius: 10px;
+	box-shadow: 0 10px 6px -6px #777;
+}
+.first-box .about-box .content .title{
+	width: 80%;
+	font-size: 30px;
+	font-weight: 700;
+}
+
+.first-box .about-box .content .text{
+	font-size: 19px;
+}
+
+/*<About CSS End>*/
+
+/*<SignUP Box CSS>*/
+
+.first-box .signup-box{
+	margin: 0 auto;
+	position: relative;
+	width: 350px;
+/* 	height: auto; */
+/* 	 */
+	float: right;
+	right: 3%;
+	top: 2%;
+	border-radius: 5px;
+/* 	box-shadow: 0 12px 5px -6px #777; */
+}
+
+.first-box .signup-box .heading{
+	margin: 0 auto;
+	width: 100%;
+	height: auto;
+	color: #fff;
+	font-size: 15px;
+}
+
+.first-box .signup-box .heading p{
+	font-size: 22px;
+	font-weight: 700;
+	position: relative;
+	top: 5px;
+}
+
+.first-box .signup-box form{
+	position: relative;
+	top: 10px;
+}
+
+.first-box .signup-box form label{
+	font-size: 15px;
+	color: #fff;
+}
+
+.first-box .signup-box form input{
+	height: 30px;
+	transition: .2s ease-in-out;
+}
+
+.first-box .signup-box form input[type=submit]{
+	position: relative;
+	height: 40px;
+	left: 50%;
+	transform: translateX(-50%);
+	background: #4286f4;
+	color: #fff;
+	font-weight: 700;
+}
+
+.first-box .signup-box form div:hover input{
+	height: 36px;
+	transition: .2s ease-in-out;
+	background: #cfcfcf;
+}
+/*
+*/
+
+#select-website, #select-service{
+	display: inline-block;
+	font-size: 14px;
+	transition: .3s ease-in-out;
+}
+
+#choice-website:checked ~ #select-website{
+	transform: scale(1.05);
+	transition: .3s ease-in-out;
+	background: #00E676;
+}
+
+#choice-service:checked ~ #select-service{
+	transform: scale(1.05);
+	transition: .3s ease-in-out;
+	background: #00E676;
+}
+
+/*<SignUP Box CSS END>*/
+
+
+
+@media only screen and (max-width: 768px){
+	.heading h1{
+		width: 100%;
+		text-align: center;
+	}
+	.heading #login{
+		position: relative;
+		float: right;
+		top: 0px;
+		right: 0px;
+	}
+
+	.first-box .signup-box{
+		margin: 0 auto;
+		float : none;
+		right:0;
+		width: 90%;
+	}
+
+	.first-box .signup-box form input{
+		height: 28px;
+	}
+} 
+</style>
+<head>
+  <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+</head>
+
+<body>
+
+	<nav class="navbar navbar-expand-lg navbar-dark bg-primary flex-nowrap flex-row flex-row" role="navigation">
+		<div class="container-fluid">
+			<a class="navbar-brand heading" href="#" style='font-size:30px'>Idea<strong>Chain</strong></a>
+			<ul class="nav navbar-nav flex-row justify-content-between ml-auto">
+				<li class="dropdown">
+					<button type="button" id="dropdownMenu1" data-toggle="dropdown" class="btn btn-outline-info dropdown-toggle bg-light">Login <span class="caret"></span></button>
+					<ul class="dropdown-menu dropdown-menu-right mt-2">
+						<li class="px-3 py-2">
+							<form action="/signin" id="signin-form" method="POST">
+								<div class="form-group">
+									<input placeholder="Email" name='email' class="form-control form-control-sm" type="text" required="">
+								</div>
+								<div class="form-group">
+									<input placeholder="Password" name='password' type='password' class="form-control form-control-sm" type="text" required="">
+								</div>
+								<div class="form-group">
+									<button type="submit" class="btn btn-primary btn-block">Login</button>
+								</div>
+								<div class="form-group text-center">
+									<small><a href="#" data-toggle="modal" data-target="#modalPassword">Forgot password?</a></small>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</li>
+			</ul>
+			<!--         </div> -->
+		</div>
+	</nav>
+
+	<div id="modalPassword" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h3>Forgot password</h3>
+					<button type="button" class="close font-weight-light" data-dismiss="modal" aria-hidden="true">×</button>
+				</div>
+				<div class="modal-body">
+					<p>Reset your password..</p>
+				</div>
+				<div class="modal-footer">
+					<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+					<button class="btn btn-primary">Save changes</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<br><br>
+
+	<!-- Header End -->
+
+	<div class="container-fluid first-box row">
+
+		<div class="container about-box col-sm-7 ">
+			<div class="content" style="float:left; background: #AB47BC;">
+				<h3 class="title"> Join a productive media</h3>
+				<p class="text"> We believe that social media should be a productive place to share idea and projects. Let's us help find other who have the same idea and interest as you</p>
+			</div>
+
+			<div class="content" style="float:right; background: #009688;">
+				<h3 class="title">Projectify idea</h3>
+				<div class='float-left pr-3'>
+					<img class='img-thumbnail rounded ' width='200' height='200' src="https://media.gettyimages.com/vectors/business-success-formula-idea-action-success-business-university-vector-id681639476">
+				</div>
+				<p class="text pr"> Put your idea to action. Let's us help reach out to users with same interest. </p>
+			</div>
+
+			<div class="content" style="float:left; background: #FF7043;">
+				<h3 class="title"> A team that builds sustainable value</h3>
+				<p class="text"> We have dedicated teams covering a wide range of technology, business and process innovation.Our commitment of substantial resources—people, capital, time, and ideas—to drive technology innovation.</p>
+			</div>
+		</div>
+		<div class="clearfix"></div>
+		<!-- Sign UP Box	 -->
+		<div class="mt-5 signup-box h50 col-md-4 clearfix">
+			<div class='col-md-12' style="background: rgba(51,51,51,.7);">
+				<div class="container-fluid heading">
+					<p class="text-center">Sign Up</p>
+				</div>
+
+				<form id="signup-form" action='/signup' method="POST">
+					<div class="form-group">
+						<label>Username *:</label>
+						<input type="text" minlength="6" name="username" placeholder=".." class="form-control" required>
+					</div>
+					<div class="form-group">
+						<label for="email">Email *:</label>
+						<input type="email" name="email" class="form-control" id="email" placeholder="example@domain.com" required>
+					</div>
+					<div class="form-group">
+						<label for="mainpassword">Password *:</label>
+						<input type="password" name="password" minlength="6" placeholder="Password" id='mainpassword' class="form-control" required>
+					</div>
+					<div class="form-group">
+						<label for="confirm">Confirm password *:</label>
+						<input type="password" name="confirm" minlength="6" placeholder="Confirm Password" class="form-control" required>
+					</div>
+
+					<input type="submit" class="btn btn-info" value="Sign-Up">
+				</form>
+			</div>
+		</div>
+		<!-- Sign Up Box End -->
+	</div>
+
+	<footer>
+
+	</footer>
+	<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.1/jquery.validate.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+	<script>
+		$(function() {
+			$("#signup-form").validate({
+				rules: {
+					username: "required",
+					email: {
+						required: true,
+						email: true
+					},
+					password: {
+						required: true,
+						minlength: 6
+					},
+					confirm: {
+						required: true,
+						equalTo: '#mainpassword'
+					}
+				},
+				// Specify validation error messages
+				messages: {
+					username: "Please enter your firstname",
+				},
+				submitHandler: function(form) {
+					form.submit();
+				}
+			});
+		});
+	</script>
+</body>
+
+</html>

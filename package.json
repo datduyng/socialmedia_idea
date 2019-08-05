@@ -1,0 +1,36 @@
+{
+  "//1": "describes your app and its dependencies",
+  "//2": "https://docs.npmjs.com/files/package.json",
+  "//3": "updating this file will download and update your packages",
+  "name": "mediabook",
+  "version": "0.0.1",
+  "description": "mediabook, a Social network application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.16.3",
+    "body-parser": "^1.19.0",
+    "sqlite3": "^4.0.0",
+    "ejs": "^1.0.0",
+    "express-session": "^1.16.1",
+    "promise": "^8.0.3",
+    "moment": "^2.24.0",
+    "moment-timezone": "^0.5.26",
+    "nodemailer": "^6.3.0"
+  },
+  "engines": {
+    "node": "8.x"
+  },
+  "repository": {
+    "url": "https://glitch.com/edit/#!/mediabook"
+  },
+  "author": "Dat Nguyen",
+  "license": "MIT",
+  "keywords": [
+    "node",
+    "glitch",
+    "express"
+  ]
+}

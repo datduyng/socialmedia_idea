@@ -1,0 +1,87 @@
+<div>
+  <% include ./header.ejs %>
+  <h1> Account Managing </h1>
+  <form action="add/view" method="get" id='addform'>
+  </form>
+  <button type='submit' form='addform' name='addbtn' value="addacount">Add account</button>
+  <table border="1">
+      <thead>
+          <tr>
+              <th scope="col">Id</th>
+              <th scope="col">Name</th>
+              <th scope="col">Email</th>
+              <th scope="col">Pass</th>
+              <th scope="col">Personal Info</th>
+              
+          </tr>
+      </thead>
+      <tbody>
+        <% users.forEach((user, index) => {%>
+        <tr>
+            <td> <%=user.id%></td>
+            <td> <%=user.username%></td>
+            <td> <%=user.email%> </td>
+            <td> <%=user.password%> </td>
+            <td> <pre><%= JSON.stringify(JSON.parse(user.personal_info),null,2) %></pre></td>
+            <td> <a href='delete?id=<%=user.id%>'>Delete</a> / <a href='edit/view?id=<%=user.id%>'>Edit</a> </td>
+        </tr>
+        <% }) %>
+
+      </tbody>
+  </table>
+  
+  
+  
+  
+  <h1> Networking manager </h1>
+  <form action="add/relationship" method="get" id='addRelationship'>
+  </form>
+  <button type='submit' form='addform' name='addbtn' value="addacount">Add Relationship</button>
+  <table border="1" style="width:10px">
+      <thead>
+          <tr>
+              <th scope="col">Id</th>
+              <th scope="col">Link from</th>
+              <th scope="col">Link to</th>    
+          </tr>
+      </thead>
+      <tbody>
+        <% edges.forEach((edge, index) => {%>
+        <tr>
+            <td> <%=edge.id%></td>
+            <td> <%=edge.link_from%></td>
+            <td> <%=edge.link_to%> </td>
+            <td> <a href='delete?id=<%=edge.id%>'>Delete</a> / <a href='edit/view?id=<%=edge.id%>'>Edit</a> </td>
+        </tr>
+        <% }) %>
+
+      </tbody>
+  </table>
+  
+  
+<h1> Posts manager </h1>
+  <table border="1" style="width:10px">
+      <thead>
+          <tr>
+              <th scope="col">Id</th>
+              <th scope="col">user__id</th>
+              <th scope="col">content</th>    
+              <th scope="col">created timestampt</th> 
+              <th scope="col">last modified timestampt</th> 
+          </tr>
+      </thead>
+      <tbody>
+        <% posts.forEach((post, index) => {%>
+        <tr>
+            <td> <%=post.id%></td>
+            <td> <%=post.user__id%></td>
+            <td> <%=post.content%> </td>
+            <td> <%=post.create_timestamp%> </td>
+            <td> <%=post.last_modified_timestamp%> </td>
+            <td> <a href='delete?id=<%=post.id%>'>Delete</a> / <a href='edit/view?id=<%=post.id%>'>Edit</a> </td>
+        </tr>
+        <% }) %>
+
+      </tbody>
+  </table>
+</div>
