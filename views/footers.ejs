@@ -1,47 +1,14 @@
 
 
-<div class="zoom">
-  <a class="zoom-fab zoom-btn-large" id="zoomBtn"><i class="fa fa-bars"></i></a>
-  <ul class="zoom-menu">
-<!--     <li><a class="zoom-fab zoom-btn-sm zoom-btn-person scale-transition scale-out"><i class="fa fa-user"></i></a></li>
-    <li><a class="zoom-fab zoom-btn-sm zoom-btn-doc scale-transition scale-out"><i class="fa fa-book"></i></a></li>
-    <li><a class="zoom-fab zoom-btn-sm zoom-btn-tangram scale-transition scale-out"><i class="fa fa-dashboard"></i></a></li>
-    <li><a class="zoom-fab zoom-btn-sm zoom-btn-report scale-transition scale-out"><i class="fa fa-edit"></i></a></li> -->
-    <li><a class="zoom-fab zoom-btn-sm zoom-btn-feedback scale-transition scale-out" title="Feedback"><img src="https://cdn.jsdelivr.net/gh/datduyng/mycdn//icons/noun-feedback.png" height="25" width="25"></a></li>
-  </ul>
+<div class="user-feedback-div">
+  <button id='feedback-btn' class="feedback-btn btn btn-secondary">Feedback</button>
 </div>
 
 <script>
-    $('#zoomBtn').click(function() {
-      $('.zoom-btn-sm').toggleClass('scale-out');
-      if (!$('.zoom-card').hasClass('scale-out')) {
-        $('.zoom-card').toggleClass('scale-out');
-      }
-    });
-
-    $('.zoom-btn-sm').click(function() {
-      var btn = $(this);
-      var card = $('.zoom-card');
-
-      if ($('.zoom-card').hasClass('scale-out')) {
-        $('.zoom-card').toggleClass('scale-out');
-      }
-      if (btn.hasClass('zoom-btn-feedback')) {
-        card.css('background-color', '#d32f2f');
-        createUserFeedbackBootbox();
-      } else if (btn.hasClass('zoom-btn-doc')) {
-        card.css('background-color', '#fbc02d');
-      } else if (btn.hasClass('zoom-btn-tangram')) {
-        card.css('background-color', '#388e3c');
-      } else if (btn.hasClass('zoom-btn-report')) {
-        card.css('background-color', '#1976d2');
-      } else {
-        card.css('background-color', '#7b1fa2');
-      }
-    });
-  </script>
-
-
+  $('#feedback-btn').click(function() {
+    createUserFeedbackBootbox();
+  });
+</script>
 
 
   </body>
