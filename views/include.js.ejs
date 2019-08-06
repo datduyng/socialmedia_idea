@@ -32,13 +32,52 @@
 
 
 <script>  
- $.fn.extend({
-      toggleHtml: function(a, b){
-          return this.html(this.html() == b ? a : b);
-      }
-  });
+$.fn.extend({
+    toggleHtml: function(a, b){
+        return this.html(this.html() == b ? a : b);
+    }
+});
   
-  
+function getUserLocation(callback) {
+  console.log('called');
+  if (navigator.geolocation) {
+    var options = {
+      // enableHighAccuracy = should the device take extra time or power to return a really accurate result, or should it give you the quick (but less accurate) answer?
+      enableHighAccuracy: false,
+      // timeout = how long does the device have, in milliseconds to return a result?
+      timeout: 20000,
+      // maximumAge = maximum age for a possible previously-cached position. 0 = must return the current position, not a prior cached position
+      maximumAge: 0
+    };
+    
+    // call getCurrentPosition()
+    navigator.geolocation.getCurrentPosition((position) => {
+      var data = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,  
+      };
+
+      //get location
+      $.getJSON('https://nominatim.openstreetmap.org/reverse', {
+          lat: 41.277541199999995,
+          lon:  -95.91598909999999 ,
+          format: 'json',
+      }, function (response) {
+        console.log('result', response);
+        [data.city, data.state, data.country] = [response.address.city.trim(), response.address.state.trim(), response.address.country.trim()];
+        console.log('send data', data);
+        $.get('/updateUserLocation',data, (response) => {
+          console.log('updated user location to', data);
+        });
+      });
+    }, (error) => {
+      console.log('error', error);
+    }, options);
+  } else {
+    console.log("Geolocation is not supported by this browser.");
+  }
+}
+
   
 
   

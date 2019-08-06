@@ -31,7 +31,7 @@
           <i class="fa fa-pencil"></i> Share your thought
         </button>
         <!--  <<<<<<Upload post Panel -->
-
+        <br><br>
         <h3>All activities</h3>
 
         <!-- >>>>list of card -->
@@ -182,6 +182,11 @@
     $(document).ready(function() {
       $('#user-list .list-group').slimScroll({height:'450px'});
     });
+    
+    <% if(!user_location_exist) { %>
+      getUserLocation();
+    <% } %>
+    
   </script>
   <script src="/client.js"></script>
 </div>

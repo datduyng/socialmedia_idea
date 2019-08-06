@@ -74,6 +74,7 @@ var transporter = nodemailer.createTransport({
         pass: 'grpatjjdptldjlkc'
     }
 });
+  
 
 
 
@@ -84,6 +85,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.urlencoded({ extended: false }));
 // app.use(bodyParser.json());
 app.use(session({secret: 'RANDOM',saveUninitialized: true,resave: true}));
+
+//detect ip address
+app.enable('trust proxy')
 
 //allow consant access
 //https://stackoverflow.com/questions/20035101/why-does-my-javascript-code-get-a-no-access-control-allow-origin-header-is-pr
@@ -118,7 +122,7 @@ app.post('/submitUserFeedback', function(request, response) {
   
   const mailOptions = {
     from: 'ideachainteam@gmail.com', // sender address
-    to: 'datnguyen5653@gmail.com', // list of receivers
+    to: 'ideachainteam@gmail.com', // list of receivers
     subject: `User feedback from ${G.session.username}`, // Subject line
     html: mail_body// plain text body
   };
@@ -207,18 +211,45 @@ app.get('/signout', (request, response) => {
 /*********************************************************************
 *****************************dashboard********************************
 **********************************************************************/
-app.get('/dashboard', function(request, response) {
+app.get('/dashboard', async function(request, response) {
   
   G.session = request.session;
   if(G.session.email){
-    response.render(__dirname + '/views/dashboard.ejs', {G:G});
+    let q = `SELECT latitude, longitude FROM users WHERE id=?`;
+    let user_location = await db.allAsync(q, [G.session.user_id]);
+    let user_location_exist = true;
+    if(user_location[0].latitude == null){
+      user_location_exist = false;   
+    }
+    
+    response.render(__dirname + '/views/dashboard.ejs', {G:G, user_location_exist:user_location_exist});
   }else{
     G.session.message = "Please login";
     response.redirect('/');
   }
-  
-
 });
+
+
+
+app.get('/updateUserLocation', function(request, response){
+  G.session = request.session;
+  console.log('request', request.body, request.query)
+  var params = request.query;
+  let q = `UPDATE users 
+           SET longitude=?, latitude=?, city=?, state=?, country=?
+           WHERE id=?`;
+  let qparams = [params.longitude, params.latitude, params.city, params.state, params.country, G.session.user_id];
+  console.log('qparams', qparams);
+  db.run(q, qparams,function (error){
+    if(error){
+      printDetailError(request, error);
+      response.status(500).send(error);
+    }else{
+      response.status(200).send(`OK`);
+    }
+  });
+});
+
 async function getActionOnPosts(action_id){
   let q = `
       SELECT post_id FROM (
@@ -243,22 +274,15 @@ app.get('/dashboard/getPosts', async (request, response) => {
   G.session = request.session;
   var q = `
     SELECT p.id as post_id, p.user__id AS user_id, u.username as name, p.title as title, 
-           p.content as content, p.description as description, p.create_timestamp as create_timestamp,
-           p.last_modified_timestamp as last_modified_timestamp 
-      FROM posts p
-        INNER JOIN (
-            SELECT link_to as id 
-              FROM relationships WHERE link_from=?
-            UNION
-            SELECT link_from as id
-              FROM relationships WHERE link_to=?
-            UNION
-            SELECT id FROM users WHERE id=?
-        ) f 
-          ON f.id=p.user__id 
-        INNER JOIN users u ON p.user__id=u.id
-      ORDER BY create_timestamp DESC`;
-  var param = [G.session.user_id, G.session.user_id, G.session.user_id]; 
+       p.content as content, p.description as description, p.create_timestamp as create_timestamp,
+       p.last_modified_timestamp as last_modified_timestamp, upa.user_post_action_select__id, count(*) as view_count
+    FROM posts p
+    LEFT OUTER JOIN user_post_action upa ON p.id=upa.post__id
+    INNER JOIN users u ON p.user__id=u.id
+    WHERE p.user__id != ? AND upa.user_post_action_select__id=1
+    GROUP BY post_id
+    ORDER BY create_timestamp DESC, view_count DESC`;
+  var param = [G.session.user_id]; 
   var posts = await getPost(q, param);
   let stars = await getActionOnPosts(2);
   let data = {
@@ -278,7 +302,7 @@ app.get('/dashboard/getPosts', async (request, response) => {
 app.get('/personalinfo', (request, response) => {
   G.session = request.session;
   var params = request.query;
-  // console.log('param personalinfo', params);
+  console.log('param personalinfo', params);
   
   var q = "SELECT username, email,  personal_info, fullname FROM users WHERE id=?";
   db.all(q, [params.user_id], (error, results) => {
@@ -507,7 +531,7 @@ app.get('/admin/query', (request, response) => {
 ********************************************************/
 
 app.get('/i', async (request, response) => {
-  console.log(' /i ideasession', request.session);
+  console.log(' /i request', request.ip, request.ips);
   moment.tz.guess(true);
   G.session = request.session;
   var params = request.query;
