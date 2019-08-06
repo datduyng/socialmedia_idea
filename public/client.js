@@ -811,21 +811,21 @@ function createUserFeedbackBootbox(){
   `;
   
   
-    var updatePersonInfoBoot = bootbox.dialog({ 
+    var userFeedbackBoot = bootbox.dialog({ 
       backdrop: true,
-      className: 'update-personal-info-boot',
+      className: 'user-feedback-boot',
       message: form_template,
       onEscape: true, 
       size: 'medium',
       centerVertical: true
     }).on('shown.bs.modal', function(){
-			 $("#signup-form").validate({
-				 rules: {
-					confirm:{
-						required: true,
-					}
-				 },
-			  });
+      // $("#signup-form").validate({
+      //   rules: {
+      //     confirm:{
+      //       required: true,
+      //     }
+      //   },
+      // });
     });
 }
 function createUpdatePersonalInfoBootbox(_todelete){
@@ -1002,6 +1002,7 @@ function createUpdatePersonalInfoBootbox(_todelete){
   
 
 }
+
 
 function getFormData($form){
     var formData = $form.serializeArray();

@@ -23,11 +23,19 @@ CREATE TABLE images (
 
 CREATE TABLE users (
   id integer NOT NULL PRIMARY KEY AUTOINCREMENT,
-  username text NOT NULL,
-  password text NOT NULL,
-  fullname text,
-  email text NOT NULL UNIQUE,
-  personal_info text DEFAULT '{}'
+  username VARCHAR(255) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  fullname VARCHAR(255),
+  email VARCHAR(255) NOT NULL UNIQUE,
+  
+  personal_info text DEFAULT '{}',
+  
+  /*User location*/
+  city VARCHAR(255) DEFAULT NULL, 
+  state VARCHAR(255) DEFAULT NULL, 
+  country VARCHAR(255) DEFAULT NULL,
+  latitude DOUBLE DEFAULT NULL,
+  longitude DOUBLE DEFAULT NULL
 );
 
 INSERT INTO users (id, username, password, email) VALUES (1, 'test', 'test', 'test@test.com');
