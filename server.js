@@ -156,6 +156,9 @@ app.get('/signup', function(request, response) {
       G.session.user = params.username;
       G.session.user_id = this.lastID;
       console.log('signup ', G.session);
+      let q = `INSERT INTO full_log_user_action (user__id, action_target_type, action_target__id, user_action_type__id)
+                VALUES (?, 'u2s', ?, 8)`;//8: joined IdeaChain
+      db.run(q, [G.session.user_id, G.session.user_id], (err) => {if(err){throw new Error(err);}});
       response.redirect(301, "/dashboard");
     }
   })
@@ -252,17 +255,13 @@ app.get('/updateUserLocation', function(request, response){
 
 async function getActionOnPosts(action_id){
   let q = `
-      SELECT post_id FROM (
-        SELECT MAX(upa.id) as id, upa.post__id AS post_id, ua.user__id,
-            upa.user_post_action_select__id, ua.timestamp
-          FROM user_post_action upa 
-          INNER JOIN user_action ua 
-              ON ua.id=upa.user_action__id
-          GROUP BY upa.post__id 
-        ) sm
-      WHERE sm.user__id=? AND 
-        sm.user_post_action_select__id=?`;
-  let qparams = [G.session.user_id+"", action_id+""];
+    SELECT action_target__id as post_id FROM user_action ua
+          INNER JOIN full_log_user_action flua 
+            ON  action_target_type='u2p' AND 
+                ua.full_log_user_action__id=flua.id
+        WHERE flua.user__id=? AND flua.user_action_type__id=?
+  `;
+  let qparams = [G.session.user_id, action_id];
   let stars = await db.allAsync(q,qparams);
   
   // console.log("stars send ", stars, qparams);
@@ -271,26 +270,30 @@ async function getActionOnPosts(action_id){
 
 
 app.get('/dashboard/getPosts', async (request, response) => {
-  G.session = request.session;
-  var q = `
-    SELECT p.id as post_id, p.user__id AS user_id, u.username as name, p.title as title, 
-       p.content as content, p.description as description, p.create_timestamp as create_timestamp,
-       p.last_modified_timestamp as last_modified_timestamp, upa.user_post_action_select__id, count(*) as view_count
-    FROM posts p
-    LEFT OUTER JOIN user_post_action upa ON p.id=upa.post__id
-    INNER JOIN users u ON p.user__id=u.id
-    WHERE p.user__id != ? AND upa.user_post_action_select__id=1
-    GROUP BY post_id
-    ORDER BY create_timestamp DESC, view_count DESC`;
-  var param = [G.session.user_id]; 
-  var posts = await getPost(q, param);
-  let stars = await getActionOnPosts(2);
-  let data = {
-    posts : posts, 
-    stars : stars
-  };
-  // console.log('getpost dashboard', data);
-  response.send(JSON.stringify(data));
+  try {
+    G.session = request.session;
+    var q = `
+      SELECT p.id as post_id, p.user__id AS user_id, u.username as name, p.title as title, 
+         p.content as content, p.description as description, p.create_timestamp as create_timestamp,
+         p.last_modified_timestamp as last_modified_timestamp
+      FROM posts p
+      INNER JOIN users u ON p.user__id=u.id
+      -- WHERE p.user__id != ? 
+      ORDER BY create_timestamp DESC`;
+    var param = [];//[G.session.user_id]; 
+    var posts = await getPost(q, param);
+    let stars = await getActionOnPosts(2);
+    console.log('stars', stars);
+    let data = {
+      posts : posts, 
+      stars : stars
+    };
+    // console.log('getpost dashboard', data);
+    response.send(JSON.stringify(data));
+    
+  } catch(async_error) {
+    console.log('async_error', JSON.stringify(async_error));
+  }
 });
 
 /******************************END************************************/
@@ -539,7 +542,7 @@ app.get('/i', async (request, response) => {
   var user_id = null;
   if(G.session.user_id == null){//if session does not exist then query for the post creator
     let q = `SELECT user__id FROM posts WHERE id=?`;
-    user_id = (await db.allAsync(q, [params.post_id]))[0].user__id;
+    user_id = (await db.allAsync(q, [params.post_id]).catch((ae) => { throw new Error(ae) }))[0].user__id;
     
     console.log('in user_id', user_id);
   }else{
@@ -548,40 +551,23 @@ app.get('/i', async (request, response) => {
   console.log('user_id', user_id);
   
   //check user viewing status
-  let q = `SELECT COUNT(*) as count 
-            FROM user_post_action upa
-            INNER JOIN user_action ua 
-              ON ua.id=upa.user_action__id
-            WHERE ua.user__id=? AND 
-                  upa.post__id=? AND 
-                  upa.user_post_action_select__id='1'`;
-  db.all(q, [user_id, params.post_id], function (error, count) {
-    count = count[0].count;
-    console.log('get first count', count);
-    if(count == 0){
-      console.log('this', this);
-      let q = `INSERT INTO user_action (user__id, user_action_select__id) VALUES (?, ?)`;
-      db.run(q, [user_id, 2], function(err) {//change this manualy. '2' is a magic number
-        let q = `INSERT INTO user_post_action (post__id, user_action__id, user_post_action_select__id) 
-                  VALUES (?, ?, ?)`;
-        if(err){
-          printDetailError(request, err);
-          throw new Error();;
-        }
-        db.run(q, [params.post_id, this.lastID, '1'], (_error) => {
-          if(_error){
-            printDetailError(request, _error);
-            return response.status(500).send(_error.message);
-            throw new Error();
-          }
-        });
-      });
-
+  let q = `
+    SELECT COUNT(*) as count 
+        FROM full_log_user_action 
+        WHERE action_target_type='u2p' AND
+        user__id=? AND
+        action_target__id=? AND
+        user_action_type__id=1`;
+  if(G.session.user_id){//viewer need to be in our system
+    let view_status = (await db.allAsync(q, [user_id, params.post_id]).catch((ae) => { throw new Error(ae) }))[0].count;
+    console.log("view count", view_status);
+    if(!view_status){//if this is the first time user is viewing
+      q = `INSERT INTO full_log_user_action (user__id, action_target_type, action_target__id, user_action_type__id)
+            VALUES (?, 'u2p', ?, 1)`;
+      db.run(q, [user_id, +params.post_id], (err) => {if(err) throw new Error(err)});
     }
-  });
-  
-  //TODO: get count of all userview
-  
+  }
+
   //query the post information then send html
   q = `SELECT id, post_type, user__id as user_id, title, 
               content, description, create_timestamp, 
@@ -592,30 +578,34 @@ app.get('/i', async (request, response) => {
               FROM post_tag it 
                 INNER JOIN post_tag_select t ON it.tag__id=t.id 
               WHERE post__id=?`;
-    
+    if(error){
+      throw new Error(error);
+    }
     post = post[0];
     post.formatted_create_timestamp = moment.unix(post.create_timestamp).format("LLLL");
     
     post.content = JSON.parse(post.content);
-    db.all(q, [params.post_id], (_error, tags) => {
+    db.all(q, [params.post_id], async (_error, tags) => {
       if(_error){
         printDetailError(request, error);
         return response.status(500).send(error.message);
       }else{
         post.tags = tags;
-        q = `SELECT COUNT(*) as view_count FROM user_post_action WHERE post__id=? AND user_post_action_select__id='1'`;
-        db.all(q, [params.post_id], (__error, view_count) =>{
-          view_count = view_count[0].view_count;
-          q = `SELECT COUNT(*) as star_count 
-                  FROM user_post_action 
-               WHERE post__id=? AND 
-               user_post_action_select__id='2'`;
-          db.all(q, [params.post_id], (___error, star_count) => {
-            console.log('star count', star_count);
-            star_count = star_count[0].star_count;
-            return response.render(__dirname + '/views/i.ejs', {G:G, post:post, tags:tags, view_count: view_count, star_count: star_count});
-          });
-        });
+        q = `SELECT COUNT(*) as view_count FROM full_log_user_action flua
+              INNER JOIN posts p ON flua.action_target_type='u2p' AND flua.action_target__id=p.id
+            WHERE p.id=? AND user_action_type__id=1`;
+        let view_count = (await db.allAsync(q, [params.post_id]).catch((ae) => { throw new Error(ae) }))[0].view_count;
+
+        q = `SELECT COUNT(*) as star_count FROM full_log_user_action flua 
+              INNER JOIN posts p ON flua.action_target_type='u2p' AND flua.action_target__id=p.id
+              INNER JOIN user_action ua ON flua.id=ua.full_log_user_action__id
+            WHERE flua.action_target_type='u2p' AND 
+                  flua.action_target__id=? AND 
+                  flua.user_action_type__id=2`;
+        let star_count = (await db.allAsync(q, [params.post_id]).catch((ae) => { throw new Error(ae) }))[0].star_count;
+        return response.render(__dirname + '/views/i.ejs', {G:G, post:post, 
+                    tags:tags, view_count: view_count, 
+                    star_count: star_count});
       }
 
     });
@@ -638,7 +628,7 @@ app.post('/addFriend', async (request, response) => {
   var params = request.body;
   
   let isfriend_res = await isFriendWith(params.id);
-  let q = ``;
+  let q, q_add_friend;
   let qparams = [];
   let rresponse = {
     added : true
@@ -647,16 +637,24 @@ app.post('/addFriend', async (request, response) => {
     q = `DELETE FROM relationships WHERE id=?`;
     qparams = [isfriend_res.relationship_id];
     rresponse.added = false;
+    q_add_friend = `INSERT INTO full_log_user_action (user__id, action_target_type, action_target__id, user_action_type__id)
+              VALUES (?, 'u2u', ?, 5)`;//5: un friend
   }else{
     q = `INSERT INTO relationships (link_from, link_to) VALUES (?, ?)`;
     qparams = [G.session.user_id, params.id];
     rresponse.added = true;
+    q_add_friend = `INSERT INTO full_log_user_action (user__id, action_target_type, action_target__id, user_action_type__id)
+              VALUES (?, 'u2u', ?, 4)`;//4: Add friend
   }
+  db.run(q_add_friend, [G.session.user_id, params.id], (err) => {if(err){throw new Error(err);}});
   db.run(q, qparams, (error) => {
     if(error){
       printDetailError(request, error);
       response.status(500).send(error.message);
     }else{
+      
+      
+      
       response.status(200).send(JSON.stringify(rresponse));
     }
   });
@@ -802,81 +800,138 @@ app.post('/actionOnPost', async (request, response) => {
 
   let action_id = params.action_id;// 2: star/unstar
   let post_id = params.post_id;
-
-  let q =   `
-SELECT MAX(upa.id) as id, user_post_action_select__id as user_post_action_select_id
-        FROM user_post_action upa
-        INNER JOIN user_action ua ON ua.id=upa.user_action__id
-        WHERE ua.user__id=? AND
-              upa.post__id=? AND (upa.user_post_action_select__id='2' OR
-                                 upa.user_post_action_select__id='3')`;//select if exist already 
-  let exist = await db.allAsync(q, [G.session.user_id, post_id]);
+  
+  let q = `
+    SELECT ua.id
+      FROM user_action ua
+        INNER JOIN full_log_user_action flua ON flua.action_target_type='u2p' AND ua.full_log_user_action__id=flua.id 
+      WHERE user__id=? AND
+        action_target__id=? AND
+        user_action_type__id=2`;
+  let action_exist = (await db.allAsync(q,[G.session.user_id, post_id]).catch((ae) => {throw new Error(ae)}));
   if(action_id == '2'){
-    
-    if(exist.length == 0 || exist[0].user_post_action_select_id == '3' || exist[0].id === null){
+    if(!action_exist.length){
       action_id = '2';
     }else{
+      q = `DELETE FROM user_action WHERE id=?`;
+      db.run(q, [action_exist[0].id], (err) => {
+        if(err) {
+          printDetailError(request, err);
+          return response.status(500).send(err.message);
+        }
+      });
       action_id = '3';//unstar
     }
   }
-  
-  q = `INSERT INTO user_action (user__id, user_action_select__id) VALUES (?, ?)`;
-  db.run(q, [G.session.user_id, '2'], function (err) {//change this manualy. '2' is a magic number
-    q = `INSERT INTO user_post_action (post__id, user_action__id, user_post_action_select__id) 
-         VALUES (?, ?,?)`;
-    db.run(q, [post_id, this.lastID, action_id], function (_error) {
-      if(_error){
-        printDetailError(request, _error);
-        return response.status(500).send(_error.message);
-       }else{
-        return response.status(200).send();
-       }
-    });
+  q = `INSERT INTO full_log_user_action (user__id, action_target_type, action_target__id, user_action_type__id)
+        VALUES (?, 'u2p', ? ,?)`;
+  db.run(q, [G.session.user_id, post_id, action_id], function(err){
+    if(err){
+      printDetailError(request, err);
+      return response.status(500).send(err.message);
+    }
+    
+    if(action_id == '2'){
+      q = `INSERT INTO user_action (full_log_user_action__id) VALUES (?)`;
+      db.run(q, [this.lastID], (_err) => {
+        if(_err){
+          printDetailError(request, err);
+          return response.status(500).send(err.message);
+        }
+      });
+    }
+    return response.status(200).send(`OK`);
   });
-  return response.status(200);
+  
 });
 
 
 app.get('/getUserActivityList', async function (request, response) {
+  
   G.session = request.session;
-  let params = request.body;
+  let params = request.query;
   sanityCheck(request, response, params);
-  
   let q = `
-    SELECT ua.id, uas.val AS user_action_type, 
-            ua.timestamp
-        FROM user_action ua 
-        INNER JOIN user_action_select uas ON uas.id=ua.user_action_select__id
-        WHERE ua.user__id=?
-        ORDER BY timestamp DESC
-        LIMIT 10`;
+      SELECT action_id, actioner, passiver, action_target_type, uat.val as action_type_val,
+           action_target__id as action_target_id,uat.status as action_type_status, 
+           timestamp, username as actioner_username, title  
+      FROM (
+
+          SELECT  MIN(flua.id) as action_id, flua.user__id as actioner, flua.action_target__id as passiver, flua.action_target_type, 
+          'title' as title, action_target__id, user_action_type__id, timestamp
+              FROM full_log_user_action flua
+              INNER JOIN users u ON flua.action_target_type='u2u' AND flua.action_target__id=u.id
+              WHERE passiver=? AND user_action_type__id IN (4)
+              GROUP BY actioner, passiver, action_target_type, action_target__id, title, user_action_type__id
+
+      UNION
+          SELECT  MIN(flua.id) as action_id, 
+              flua.user__id as actioner, p.user__id as passiver,flua.action_target_type, 
+              p.title as title, action_target__id,user_action_type__id , timestamp 
+              FROM full_log_user_action flua
+              INNER JOIN posts p ON flua.action_target_type='u2p' AND flua.action_target__id=p.id
+              WHERE passiver=? AND user_action_type__id IN (2)
+              GROUP BY actioner, passiver, action_target_type, action_target__id, title, user_action_type__id
+          ) ac
+      INNER JOIN users u ON ac.actioner=u.id
+      INNER JOIN user_action_type uat ON ac.user_action_type__id = uat.id
+      ORDER BY action_id DESC`;
   
-  let action_list = await db.allAsync(q, [G.session.user_id+""]);
-  let activity_list = [];
-  for(var i=0; i<action_list.length; i++){
-    let detail = {
-      name: 'You',
-      user_action_type : action_list[i].user_action_type,
-      timestamp : action_list[i].timestamp,
-    };
-    if(action_list[i].user_action_type == 'user_to_post'){//user_to_post action
-      q = `
-        SELECT p.id as post_id, p.title, upas.type AS user_action_post_type
-            FROM user_post_action upa
-            INNER JOIN posts p ON p.id=upa.post__id
-            INNER JOIN user_post_action_select upas 
-                ON upas.id=upa.user_post_action_select__id 
-            WHERE user_action__id=?`;
-      let __detail = await db.allAsync(q, [action_list[i].id]);
-      detail = Object.assign({}, detail, __detail[0]);
-      // console.log('detail', detail);
-    } else if(action_list[i].user_action_type == 'user_to_user'){//user_to_user action
-      q = ``;
-      let detail = await db.allAsync(q, []);
-    }
-    activity_list.push(detail);
+  if(params.limit){
+    q += ` LIMIT ${params.limit}`;
   }
+  let activity_list = await db.allAsync(q, [G.session.user_id, G.session.user_id]).catch((ae) => { throw new Error(ae) });
   response.send(JSON.stringify(activity_list));
+});
+
+
+
+app.get('/activity', function (request, response) {
+  G.session = request.session; 
+  response.render(__dirname + '/views/activity.ejs', {G:G});
+});
+
+app.get('/activity/fetchRecentActivity', function(request, response){
+  G.session = request.session; 
+  let params = request.query;
+  sanityCheck(request, response, params);
+  let q = `
+      SELECT action_id, actioner, passiver, action_target_type, uat.val as action_type_val,
+           action_target__id as action_target_id,uat.status as action_type_status, 
+           timestamp, username as actioner_username, title  
+      FROM (
+
+          SELECT  MIN(flua.id) as action_id, flua.user__id as actioner, flua.action_target__id as passiver, flua.action_target_type, 
+          'title' as title, action_target__id, user_action_type__id, timestamp
+              FROM full_log_user_action flua
+              INNER JOIN users u ON flua.action_target_type IN ('u2u','u2s') AND flua.action_target__id=u.id
+              WHERE user_action_type__id IN (4, 6, 8) /*Addfriend, collaborate, joined IdeaChain*/
+              GROUP BY actioner, passiver, action_target_type, action_target__id, title, user_action_type__id
+
+      UNION
+          SELECT  MIN(flua.id) as action_id, 
+              flua.user__id as actioner, p.user__id as passiver,flua.action_target_type, 
+              p.title as title, action_target__id,user_action_type__id , timestamp 
+              FROM full_log_user_action flua
+              INNER JOIN posts p ON flua.action_target_type='u2p' AND flua.action_target__id=p.id
+              WHERE user_action_type__id IN (2)
+              GROUP BY actioner, passiver, action_target_type, action_target__id, title, user_action_type__id
+          ) ac
+      INNER JOIN users u ON ac.actioner=u.id
+      INNER JOIN user_action_type uat ON ac.user_action_type__id = uat.id
+      ORDER BY action_id DESC
+  `;
+  if(params.limit){
+    q += ` LIMIT ${params.limit}`;
+  }
+  db.all(q, [], (error, activity_list) => {
+    if(error){
+      printDetailError(request, error);
+      return response.status(500).send(error.message);
+    }else{
+      return response.send(JSON.stringify(activity_list));
+    }
+  });
 });
 /********************************************************************/
 
@@ -899,6 +954,8 @@ function sanityCheck(request, response, params){
   };
   console.log(message);
 }
+
+
 /*****************************************************************/
 // listen for requests :)
 var listener = app.listen(process.env.PORT, function() {

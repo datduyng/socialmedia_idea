@@ -12,6 +12,10 @@ sqlite3 .data/sqlite.db
 -- save the sqlite data base
 sqlite3 .data/sqlite.db .dump > output.sql
 
+--delete a table and restart primarykey counter
+delete from your_table;    
+delete from sqlite_sequence where name='your_table';
+
 -- show all table
 */
 
@@ -95,7 +99,7 @@ CREATE TABLE posts (
 );
 
 CREATE TABLE post_types (
-  id integer PRIMARY KEY AUTOINCREMENT,
+  id integer NOT NULL PRIMARY KEY AUTOINCREMENT,
   type text NOT NULL
 );
 
@@ -130,33 +134,8 @@ CREATE TABLE post_tag (
     ON DELETE CASCADE
 );
 
-CREATE TABLE user_post_action (
-  id integer PRIMARY KEY AUTOINCREMENT, 
-  post__id integer NOT NULL,
-  user_post_action_select__id integer NOT NULL,
-  user_action__id integer NOT NULL,
-  
-   FOREIGN KEY (post__id)
-    REFERENCES posts(id)
-    ON DELETE CASCADE,
-
-   FOREIGN KEY (user_action__id)
-    REFERENCES user_action(id)
-    ON DELETE CASCADE
-);
-
-CREATE TABLE user_post_action_select (
-  id integer PRIMARY KEY AUTOINCREMENT, 
-  type text NOT NULL
-  
-);
-
-INSERT INTO user_post_action_select (type) VALUES ('view');
-INSERT INTO user_post_action_select (type) VALUES ('star');
-INSERT INTO user_post_action_select (type) VALUES ('unstar');
-
 CREATE TABLE user_interest_select (
-  id integer PRIMARY KEY AUTOINCREMENT,
+  id integer NOT NULL PRIMARY KEY AUTOINCREMENT,
   val text NOT NULL
 );
 
@@ -170,7 +149,7 @@ INSERT INTO user_interest_select (val) VALUES ('sport');
 
 
 CREATE TABLE user_interest (
-  id integer PRIMARY KEY AUTOINCREMENT,
+  id integer NOT NULL PRIMARY KEY AUTOINCREMENT,
   user__id integer NOT NULL, 
   user_interest_select__id integer NOT NULL,
 
@@ -183,51 +162,48 @@ CREATE TABLE user_interest (
     ON DELETE CASCADE
 );
 
-CREATE TABLE user_action_select (
-  id integer PRIMARY KEY AUTOINCREMENT,
-  val text NOT NULL
-);
-INSERT INTO user_action_select (val) VALUES ('user_to_user');
-INSERT INTO user_action_select (val) VALUES ('user_to_post');
-INSERT INTO user_action_select (val) VALUES ('user_to_self');
 
+/* Only keep the most recent user_action */
 CREATE TABLE user_action (
-  id integer PRIMARY KEY AUTOINCREMENT,
+	id integer NOT NULL PRIMARY KEY AUTOINCREMENT,	
+  full_log_user_action__id integer NOT NULL,
+
+  FOREIGN KEY (full_log_user_action__id)
+    REFERENCES full_log_user_action(id)
+    ON DELETE CASCADE
+);
+
+/* Keep all user activities history*/
+CREATE TABLE full_log_user_action(
+	id integer NOT NULL PRIMARY KEY AUTOINCREMENT,	
   user__id integer NOT NULL,
-  user_action_select__id integer NOT NULL,
+  action_target_type VARCHAR(255) NOT NULL, /*u2u, u2p, u2s*/
+  action_target__id integer NOT NULL,
+  user_action_type__id integer NOT NULL,
   timestamp integer DEFAULT (CAST(strftime('%s','now') as integer)),
-  
-  FOREIGN KEY (user_action_select__id)
-    REFERENCES user_action_select(id)
-    ON DELETE CASCADE,
 
   FOREIGN KEY (user__id)
     REFERENCES users(id)
     ON DELETE CASCADE
 );
 
-CREATE TABLE user_user_action (
-  id integer PRIMARY KEY AUTOINCREMENT,
-  to_user__id integer NOT NULL,
-  user_action__id integer NOT NULL,
-  user_user_action_select__id integer NOT NULL,
-  
-  FOREIGN KEY (user_user_action_select__id)
-    REFERENCES user_user_action_select(id)
-    ON DELETE CASCADE,
-  
-  FOREIGN KEY (user_action__id)
-    REFERENCES user_action(id)
-    ON DELETE CASCADE,
-
-  FOREIGN KEY (to_user__id)
-  	REFERENCES users(id)
-    ON DELETE CASCADE
+CREATE TABLE user_action_type(
+ id integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+ status TINYINT DEFAULT 1,
+ val VARCHAR(255) NOT NULL
 );
+/*u2p*/
+INSERT INTO user_action_type (status, val) VALUES (1,'view');
 
-CREATE TABLE user_user_action_select(
-  id integer PRIMARY KEY AUTOINCREMENT,
-  val text NOT NULL
-);
-INSERT INTO user_user_action_select (val) VALUES ('add friend');
-INSERT INTO user_user_action_select (val) VALUES ('became member');
+INSERT INTO user_action_type (status, val) VALUES (1,'star');
+INSERT INTO user_action_type (status, val) VALUES (-1,'star');
+
+/*u2u*/
+INSERT INTO user_action_type (status, val) VALUES (1,'friend');
+INSERT INTO user_action_type (status, val) VALUES (-1,'friend');
+
+INSERT INTO user_action_type (status, val) VALUES (1,'collaborate');
+INSERT INTO user_action_type (status, val) VALUES (-1,'collaborate');
+
+/*u2s*/
+INSERT INTO user_action_type (status, val) VALUES (1,'join IdeaChain');

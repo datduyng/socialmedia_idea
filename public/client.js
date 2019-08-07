@@ -1,38 +1,5 @@
 
 
-var social = Vue.mixin({
-  methods: {
-    shareFacebook: function(url){
-      let host = "https://www.facebook.com/sharer.php?";//u=[post-url]
-        let data = {
-          u: url
-        }
-      host = host+$.param(data);
-      window.open(host, "_blank", "toolbar=1, scrollbars=1, resizable=1, width=" + 1015 + ", height=" + 800);
-    },
-
-    shareTwitter: function(url, title=""){
-        let host = "https://twitter.com/share?";//url=[post-url]&text=[post-title]
-        let data = {
-            url: url,
-            text: title
-        };
-      host = host+$.param(data);
-      window.open(host, "_blank", "toolbar=1, scrollbars=1, resizable=1, width=" + 1015 + ", height=" + 800);
-    },
-
-    shareReddit: function(url, title=""){
-        let host = "https://reddit.com/submit?";//url=[post-url]&title=[post-title]
-        let data = {
-            url: url,
-            title: title,
-        };
-      host = host+$.param(data);
-      window.open(host, "_blank", "toolbar=1, scrollbars=1, resizable=1, width=" + 1015 + ", height=" + 800);
-    }
-  }
-});
-
 
 
 var social = Vue.mixin({
@@ -64,6 +31,44 @@ var social = Vue.mixin({
 
   }
 });
+
+
+Vue.component('recent-activity-item',{
+  props: {
+    activity_detail: Object
+  }, 
+  template: `
+    <div class="media text-muted pt-3 list-item">
+      <img src="https://cdn.glitch.com/81be7dd8-00c3-4077-b658-479b65c93098%2Ffeac67ed-a868-46f6-a867-7c69d772d51b_200x200%20(4).png?v=1565189956579" alt="" class="bd-placeholder-img mr-2 rounded" width="32" height="32">
+      <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
+        <a :href="'http://ideachain.glitch.me/personalinfo?user_id='+this.activity_detail.actioner"><strong class="d-block text-gray-dark">@{{ activity_detail.actioner_username }}</strong></a>
+        <span v-html="getActivityMessage()"></span>
+      </p>
+    </div>
+  `,
+  methods:{
+    getActivityMessage(){
+      console.log('test', this.activity_detail);
+      // if(this.activity_detail.message){
+      //   return this.activity_detail.message;
+      // }
+      if(this.activity_detail.action_target_type == 'u2p') {
+        this.activity_detail.message = `
+          <span> has ${this.activity_detail.action_type_val}ed <a href="http://ideachain.glitch.me/i?post_id=${this.activity_detail.action_target_id}">${this.activity_detail.title}</a></span>
+        `;
+      }else if(this.activity_detail.action_target_type == 'u2u') {
+        this.activity_detail.message = `
+          <span> has ${this.activity_detail.action_type_val}ed with ${this.activity_detail.passiver}</span>
+        `;
+      }else if(this.activity_detail.action_target_type == 'u2s'){
+        this.activity_detail.message = `
+          <span> ${this.activity_detail.action_type_val}`;
+      }
+      return this.activity_detail.message;
+    }
+  }
+});
+
 
 Vue.component('activity-item', {
   props: {
@@ -329,14 +334,18 @@ var user_activity_list = new Vue({
       return dateTimeString;
     },
     getUserActivityList: function() {
-      $.get('/getUserActivityList', {}, (response) => {
+      $.get('/getUserActivityList', {limit:10}, (response) => {
         console.log('activity list', response); 
         var all_activity = JSON.parse(response);
-        
+        //action_id, actioner, passiver, action_target_type, action_target__id, user_action_type__id, timestamp, username, title
         for(var i=0; i<all_activity.length; i++){
-          if(all_activity[i].user_action_type == 'user_to_post') {
+          if(all_activity[i].action_target_type == 'u2p') {
             all_activity[i].message = `
-              <span>You has ${all_activity[i].user_action_post_type + "ed"} <a href="http://ideachain.glitch.me/i?post_id=${all_activity[i].post_id}">${all_activity[i].title}</a> </span>
+              <span><a href="http://ideachain.glitch.me/personalinfo?user_id=${all_activity[i].actioner}">${all_activity[i].actioner_username}</a> has ${all_activity[i].action_type_val}ed <a href="http://ideachain.glitch.me/i?post_id=${all_activity[i].action_target_id}">${all_activity[i].title}</a></span>
+            `;
+          }else if(all_activity[i].action_target_type == 'u2u') {
+            all_activity[i].message = `
+              <span><a href="http://ideachain.glitch.me/personalinfo?user_id=${all_activity[i].actioner}">${all_activity[i].actioner_username}</a> has ${all_activity[i].action_type_val}ed with you</span>
             `;
           }else{
             all_activity[i].message = `
@@ -354,6 +363,43 @@ var user_activity_list = new Vue({
     this.getUserActivityList();
   }
 });
+
+
+const mixin_recent_activity = {
+  data() {
+    return {
+      recent_activity_list: [],
+    }
+  },
+  methods: {
+    fetchRecentActivity(limit=1000){
+      let data = {
+        limit: limit
+      };
+      $.get('/activity/fetchRecentActivity', data, (response) => {
+        var recent_activity = JSON.parse(response);
+        this.recent_activity_list = recent_activity;
+      });
+    }
+  }
+}
+
+var recent_activity_page = new Vue({
+  el: '#recent-activity-page',
+  mixins: [mixin_recent_activity],
+  data (){
+    return {
+      
+    }
+  },
+  methods:{
+    
+  },
+  created: function(){
+    // this.fetchRecentActivity();
+  }
+})
+
 
 var postList = new Vue({
   el: '#post-list', 
