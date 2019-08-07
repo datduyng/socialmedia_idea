@@ -1,7 +1,3 @@
-
-
-
-
 var social = Vue.mixin({
   methods: {
     twitterLink: function(shareurl, title=""){
@@ -31,7 +27,6 @@ var social = Vue.mixin({
 
   }
 });
-
 
 Vue.component('recent-activity-item',{
   props: {
@@ -68,7 +63,6 @@ Vue.component('recent-activity-item',{
     }
   }
 });
-
 
 Vue.component('activity-item', {
   props: {
@@ -364,7 +358,6 @@ var user_activity_list = new Vue({
   }
 });
 
-
 const mixin_recent_activity = {
   data() {
     return {
@@ -396,7 +389,32 @@ var recent_activity_page = new Vue({
     
   },
   created: function(){
-    // this.fetchRecentActivity();
+    this.fetchRecentActivity();
+  },
+  updated: function () {
+    this.$nextTick(function () {
+        // jQuery Plugin: http://flaviusmatis.github.io/simplePagination.js/
+        var items = $(".list-wrapper .list-item");
+        var numItems = items.length;
+        var perPage = 10;
+        console.log('runing mounted', numItems);
+        items.slice(perPage).hide();
+
+        $("#pagination-container").pagination({
+          items: numItems,
+          itemsOnPage: perPage,
+          prevText: "&laquo;",
+          nextText: "&raquo;",
+          onPageClick: function(pageNumber) {
+            var showFrom = perPage * (pageNumber - 1);
+            var showTo = showFrom + perPage;
+            items
+              .hide()
+              .slice(showFrom, showTo)
+              .show();
+          }
+        });
+    })
   }
 })
 
