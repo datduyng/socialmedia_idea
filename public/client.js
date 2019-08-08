@@ -1,3 +1,20 @@
+class ClientExpress{
+  constructor() {
+    this.routes = {};
+  }
+  route(path, callback=function(){}){
+    this.routes[path] = callback;
+  }
+  listen(callback=function(){}){
+    callback();//print some debugiing
+
+    if (!this.routes[location.pathname]){
+      throw new Error("Route '"+location.pathname + "' does not exist")
+    }
+    this.routes[location.pathname]();
+  } 
+}
+
 var social_mixin = {
   methods: {
     twitterLink: function(shareurl, title=""){
@@ -24,7 +41,6 @@ var social_mixin = {
       return host+$.param(data);
     },
     //DO NOT REMOVE: window.open(host, "_blank", "toolbar=1, scrollbars=1, resizable=1, width=" + 1015 + ", height=" + 800);// open a new window to share
-
   }
 };
 
@@ -36,9 +52,9 @@ var post_list_mixin = {
     }
   },
   methods: {
-    getUserPostList: function(limit=null){
+    getUserPostList: async function(limit=null){
       console.log('call', 'getUserPostList')
-      $.get('/dashboard/getPosts', {limit: limit}, (response) => {
+      await $.get('/dashboard/getPosts', {limit: limit}, (response) => {
         
         let data = JSON.parse(response);
         console.log('data post ', data);
@@ -76,7 +92,6 @@ const mixin_recent_activity = {
       };
       $.get('/activity/fetchRecentActivity', data, (response) => {
         var recent_activity = JSON.parse(response);
-        console.log('lim', limit, recent_activity);
         this.recent_activity_list = recent_activity;
       });
     }
@@ -99,10 +114,6 @@ Vue.component('recent-activity-item',{
   `,
   methods:{
     getActivityMessage(){
-      console.log('test', this.activity_detail);
-      // if(this.activity_detail.message){
-      //   return this.activity_detail.message;
-      // }
       if(this.activity_detail.action_target_type == 'u2p') {
         this.activity_detail.message = `
           <span> has ${this.activity_detail.action_type_val}ed <a href="http://ideachain.glitch.me/i?post_id=${this.activity_detail.action_target_id}">${this.activity_detail.title}</a></span>
@@ -364,9 +375,13 @@ Vue.component('post-item', {
     }
   }        
 });
-
+/******************************************************************************
+ ******************************************************************************
+ ***********************************Vue App ***********************************
+ ******************************************************************************
+ *****************************************************************************/
 var user_activity_list = new Vue({
-  el: '#user-activity-list',
+  // el: '#user-activity-list',
   data: {
     all_activity: []
   },
@@ -406,117 +421,8 @@ var user_activity_list = new Vue({
   }
 });
 
-
-
-var index_recent_activity_page = new Vue({
-  el: '#index-page-recent-activity',
-  mixins: [mixin_recent_activity],
-  created: function(){
-    this.fetchRecentActivity(5);
-  },
-})
-
-var recent_activity_page = new Vue({
-  el: '#recent-activity-page',
-  mixins: [mixin_recent_activity],
-  data (){
-    return {
-      
-    }
-  },
-  methods:{
-    
-  },
-  created: function(){
-    this.fetchRecentActivity();
-  },
-  updated: function () {
-    this.$nextTick(function () {
-        // jQuery Plugin: http://flaviusmatis.github.io/simplePagination.js/
-        var items = $(".list-wrapper .list-item");
-        var numItems = items.length;
-        var perPage = 10;
-        console.log('runing mounted', numItems);
-        items.slice(perPage).hide();
-
-        $("#pagination-container").pagination({
-          items: numItems,
-          itemsOnPage: perPage,
-          prevText: "&laquo;",
-          nextText: "&raquo;",
-          onPageClick: function(pageNumber) {
-            var showFrom = perPage * (pageNumber - 1);
-            var showTo = showFrom + perPage;
-            items
-              .hide()
-              .slice(showFrom, showTo)
-              .show();
-          }
-        });
-    })
-  }
-})
-
-
-var postList = new Vue({
-  el: '#post-list', 
-  mixin: [social_mixin],
-  data: {
-    posts: []
-  },
-  methods: {
-    getPostList: async function(){
-      await $.get('/personalinfo/getPosts', {}, (response) => {
-        console.log('post', response);
-        
-        var objs = JSON.parse(response);
-        
-        for(var i=0; i<objs.length; i++){
-          objs[i].content = JSON.parse(objs[i].content);
-        }
-        this.posts = objs;
-        
-        let ckeditor = document.createElement('script');    
-        ckeditor.setAttribute('src',"https://platform-api.sharethis.com/js/sharethis.js#property=5d409348919c2c0012611ed5&product=custom-share-buttons");
-        document.head.appendChild(ckeditor);
-      });
-    }
-  },
-  created: function() {
-    this.getPostList();
-  }
-});
-
-
-var post_list_index_page = new Vue({
-  el: '#post-list-index-page', 
-  mixins: [post_list_mixin],
-  created: function(){
-    // this.getPostList(4);
-  }
-});
-
-var postListDashBoard = new Vue({
-  el: '#post-list-dashboard', 
-  mixins: [post_list_mixin],
-  methods: {
-  },
-  created: function() {
-    console.log("are you callingl")
-    this.getUserPostList();
-  },
-  updated: function(){
-    this.$grid = $('.white-deck').masonry({
-      itemSelector: '.white-panel',
-      columnWidth: '.grid-sizer',
-      percentPosition: true
-    });
-  }
-});
-
-
 var friendList = new Vue({
-  el: '#friend-list',
+  // el: '#friend-list',
   data:{
     users: []
   },
@@ -536,18 +442,7 @@ var friendList = new Vue({
   }
 });
 
-
-function addFriend(other_user_id){
-  let params = {
-    id: other_user_id,
-  };
-  $.post('/addFriend', params, (response) => {
-    if(response.added) notificationToast(`You are now friend with ${other_user_id}`);
-  });
-}
-
 var userList = new Vue({
-  el:'#user-list', 
   data: {
     users: [], 
     message : "hello world", 
@@ -555,12 +450,11 @@ var userList = new Vue({
   }, 
   methods: {
     addFriend: function(index){
-
       let params = this.users[index];
       $.post('/addFriend', params, (response) => {});
       friendList.addFriend(params);
       console.log(this.users[index]);
-       notificationToast(`You are now friend with <a href="http://ideachain.glitch.me/personalinfo?user_id=${this.users[index].id}"> ${this.users[index].username}</a>`);
+      notificationToast(`You are now friend with <a href="http://ideachain.glitch.me/personalinfo?user_id=${this.users[index].id}"> ${this.users[index].username}</a>`);
       this.users.splice(index, 1);
     },
     getOtherPeopleList: function(){
@@ -576,7 +470,144 @@ var userList = new Vue({
   }
 });
 
+var postListDashBoard = new Vue({
+  mixins: [post_list_mixin],
+  methods: {
+  },
+  created: async function() {
+    await this.getUserPostList();
+    var $this = this;
 
+    setTimeout(function(){ 
+      $this.$grid = $('.white-deck').masonry({
+        itemSelector: '.white-panel',
+        columnWidth: '.grid-sizer',
+        percentPosition: true
+      }); 
+    }, 1000 );
+  },
+  updated: function(){
+  }
+});
+
+/******************************************************************************
+ ******************************************************************************
+ *****************************App Routing *****************************
+ *****************************************************************************/
+var app = new ClientExpress();
+
+app.route('/activity', () => {
+  var recent_activity_page = new Vue({
+    el: '#recent-activity-page',
+    mixins: [mixin_recent_activity],
+    data (){
+      return {
+        
+      }
+    },
+    methods: {
+      
+    },
+    created: function(){
+      this.fetchRecentActivity();
+    },
+    updated: function () {
+      this.$nextTick(function () {
+          // jQuery Plugin: http://flaviusmatis.github.io/simplePagination.js/
+          var items = $(".list-wrapper .list-item");
+          var numItems = items.length;
+          var perPage = 10;
+          console.log('runing mounted', numItems);
+          items.slice(perPage).hide();
+
+          $("#pagination-container").pagination({
+            items: numItems,
+            itemsOnPage: perPage,
+            prevText: "&laquo;",
+            nextText: "&raquo;",
+            onPageClick: function(pageNumber) {
+              var showFrom = perPage * (pageNumber - 1);
+              var showTo = showFrom + perPage;
+              items
+                .hide()
+                .slice(showFrom, showTo)
+                .show();
+            }
+          });
+      })
+    }
+  });
+});
+
+
+app.route('/', () => {
+  var index_recent_activity_page = new Vue({
+    el: '#index-page-recent-activity',
+    mixins: [mixin_recent_activity],
+    created: function(){
+      this.fetchRecentActivity(5);
+    },
+  })
+});
+
+
+app.route('/dashboard', () => {
+  user_activity_list.$mount('#user-activity-list');
+  userList.$mount('#user-list');
+  friendList.$mount('#friend-list');
+  postListDashBoard.$mount('#post-list-dashboard');
+});
+
+app.route('/i', () => {
+  user_activity_list.$mount('#user-activity-list');
+  userList.$mount('#user-list');
+  friendList.$mount('#friend-list');
+});
+
+app.route('/personalinfo', () => {
+  user_activity_list.$mount('#user-activity-list');
+  userList.$mount('#user-list');
+  friendList.$mount('#friend-list');
+  postListDashBoard.$mount('#post-list-dashboard');
+
+  var postList = new Vue({
+    el: '#post-list', 
+    mixin: [social_mixin],
+    data: {
+      posts: []
+    },
+    methods: {
+      getPostList: async function(){
+        await $.get('/personalinfo/getPosts', {}, (response) => {
+          console.log('post', response);
+          
+          var objs = JSON.parse(response);
+          
+          for(var i=0; i<objs.length; i++){
+            objs[i].content = JSON.parse(objs[i].content);
+          }
+          this.posts = objs;
+          
+          let ckeditor = document.createElement('script');    
+          ckeditor.setAttribute('src',"https://platform-api.sharethis.com/js/sharethis.js#property=5d409348919c2c0012611ed5&product=custom-share-buttons");
+          document.head.appendChild(ckeditor);
+        });
+      }
+    },
+    created: function() {
+      this.getPostList();
+    }
+  });
+});
+
+function addFriend(other_user_id){
+  let params = {
+    id: other_user_id,
+  };
+  $.post('/addFriend', params, (response) => {
+    if(response.added) notificationToast(`You are now friend with ${other_user_id}`);
+  });
+}
 
 function updatePersonalInfo(){
     var formData = getFormData($('#update-personal-info-form'));
@@ -604,8 +635,6 @@ function handleCreateIdeaForm(){
     console.log("added", response);
     var obj = JSON.parse(response)[0];
     obj.content = JSON.parse(obj.content);
-    postList.posts.push(obj);
-    postListDashBoard.posts.push(obj);
     window.location.href = `http://ideachain.glitch.me/i?post_id=${obj.post_id}`;
   });
 }
@@ -1098,13 +1127,10 @@ function getFormData($form){
 function createUser(){
     var message = "Creating new user";
     var formData = getFormData($('#signup-form'));
-    console.log(formData);
-
     $.post('/signup', formData, function(response){
       console.log(response);
     });
 }
-
 
 function notificationToast (message, toast_type='info'){
 //https://codeseven.github.io/toastr/demo.html
@@ -1130,4 +1156,6 @@ function notificationToast (message, toast_type='info'){
 }
 
 /***********************Social media share**********************/
-
+app.listen(() =>{
+  console.log(`Start IdeaChain App @ '${location.pathname}'`)
+});
