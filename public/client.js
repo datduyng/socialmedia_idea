@@ -1,4 +1,4 @@
-var social = Vue.mixin({
+var social_mixin = {
   methods: {
     twitterLink: function(shareurl, title=""){
       let host = "https://twitter.com/share?";//url=[post-url]&text=[post-title]
@@ -26,9 +26,9 @@ var social = Vue.mixin({
     //DO NOT REMOVE: window.open(host, "_blank", "toolbar=1, scrollbars=1, resizable=1, width=" + 1015 + ", height=" + 800);// open a new window to share
 
   }
-});
+};
 
-var post_list_mixin = Vue.mixin({
+var post_list_mixin = {
   data() {
     return {
       posts: [],
@@ -61,7 +61,7 @@ var post_list_mixin = Vue.mixin({
       });
     }
   }
-});
+};
 
 const mixin_recent_activity = {
   data() {
@@ -252,6 +252,7 @@ Vue.component('post-item', {
     tags: Array,
     star_status: Boolean
   },
+  mixins: [social_mixin],
   data: function () {
     return {
       user_action: {
@@ -459,7 +460,7 @@ var recent_activity_page = new Vue({
 
 var postList = new Vue({
   el: '#post-list', 
-  mixin: [social],
+  mixin: [social_mixin],
   data: {
     posts: []
   },
