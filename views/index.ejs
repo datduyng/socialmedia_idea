@@ -192,8 +192,7 @@ body,html{
 } 
 </style>
 <head>
-  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
-  
+<!--   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css"> -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <meta name="description" content="">
@@ -202,7 +201,7 @@ body,html{
   <% include ./include.js.ejs %>
 </head>
 
-<body>
+<body class='bg-light'>
 
 	<nav class="navbar navbar-expand-lg navbar-dark bg-primary flex-nowrap flex-row flex-row" role="navigation">
 		<div class="container">
@@ -314,28 +313,34 @@ body,html{
       <!-- App Info -->
     <div class='row justify-content-center'>
 
-      <div id='post-list-index-page' class='col-md-6'>
-        <div id='post-list-dashboard' ref='post_list_dashboard' class="white-deck">
-          <div class='grid-sizer col-md-6'></div>
-          <div class="gutter-sizer"></div>
-          <!--- >>>>>>Post-->
-          <post-item v-for="(post, index) in posts"
-                     :post_id='post.post_id'
-                     :title='post.title'
-                     :username='post.name'
-                     :star_status = 'post.star_status'
-                     :content='post.content'
-                     :tags = 'post.tags'
-                     :create_timestamp='post.create_timestamp'>
-          </post-item>
-          <!--- <<<<<<<Post-->
+      <div class='col-md-6'>
+        <div class='my-3 p-3 rounded box-shadow'>
+          <h6 class="border-bottom border-gray pb-2 mb-0">IdeaChain recent post</h6>
+          <br>
+          <div id='feature-post' class="white-deck">
+            <div class='grid-sizer col-md-6'></div>
+            <div class="gutter-sizer"></div>
+            <!--- >>>>>>Post-->
+            <post-item v-for="(post, index) in posts"
+                       :post_id='post.post_id'
+                       :title='post.title'
+                       :username='post.name'
+                       :content='post.content'
+                       :tags = 'post.tags'
+                       :create_timestamp='post.create_timestamp'
+                       :bootstrap_col="'col-lg-6'"
+                       :user_functionality='false'>
+            </post-item>
+            <!--- <<<<<<<Post-->
+          </div>
         </div>
+
       </div>
 
 
       <!--Top User -->
       <div class='col-md-3'>
-        <div class="my-3 p-3 bg-white rounded box-shadow">
+        <div class="my-3 p-3 bg-white rounded box-shadow border border-dark">
           <h6 class="border-bottom border-gray pb-2 mb-0">Top IdeaChainer</h6>
           <div class="media text-muted pt-3 list-item">
            <img src="https://cdn.glitch.com/81be7dd8-00c3-4077-b658-479b65c93098%2Ffeac67ed-a868-46f6-a867-7c69d772d51b_200x200%20(4).png?v=1565189956579" alt="" class="bd-placeholder-img mr-2 rounded" width="32" height="32">
@@ -349,8 +354,8 @@ body,html{
 
       <!--Recent Activity -->
       <div id='index-page-recent-activity' class='col-md-3'>
-       <div class="my-3 p-3 bg-white rounded box-shadow">
-        <h6 class="border-bottom border-gray pb-2 mb-0">Recent activities</h6>
+       <div class="my-3 p-3 bg-white rounded box-shadow border border-dark">
+        <h6 class="border-bottom border-gray pb-2 mb-0">Feeds</h6>
 
         <div class="list-wrapper">
           <recent-activity-item v-for="(activity, index) in recent_activity_list"

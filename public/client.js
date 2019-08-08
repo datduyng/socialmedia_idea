@@ -261,7 +261,18 @@ Vue.component('post-item', {
     status: String, 
     create_timestamp: Number, 
     tags: Array,
-    star_status: Boolean
+    star_status: {
+      type: Boolean, 
+      default: true //true: off
+    },
+    bootstrap_col: { 
+      type: String,
+      default: 'col-lg-4'
+    },
+    user_functionality:{
+      type: Boolean,
+      default: true
+    }
   },
   mixins: [social_mixin],
   data: function () {
@@ -272,7 +283,7 @@ Vue.component('post-item', {
     }
   },
   template: `
-<div class="card gedf-card white-panel col-lg-4 mb-1">
+<div class="'card gedf-card white-panel ' + bootstrap_col +' mb-1'">
   <div class="card-header">
     <div class="d-flex justify-content-between align-items-center">
       <div class="d-flex justify-content-between align-items-center">
@@ -363,15 +374,20 @@ Vue.component('post-item', {
     },
     
     toggle_star: function() {
-      this.user_action.star_toggle = !this.user_action.star_toggle;
-      //type 1: view, type 2: star
-      let data = {
-        action_id: 2,
-        post_id: this.post_id
-      };
-      $.post('/actionOnPost', data, (response) => {
-        console.log('response', response);
-      }); 
+      if(this.user_functionality){
+        this.user_action.star_toggle = !this.user_action.star_toggle;
+        //type 1: view, type 2: star
+        let data = {
+          action_id: 2,
+          post_id: this.post_id
+        };
+        $.post('/actionOnPost', data, (response) => {
+          console.log('response', response);
+        }); 
+      }else{
+        this.user_action.star_toggle = true;
+        notificationToast(`Login to get full user experience`, "info");
+      }
     }
   }        
 });
@@ -477,7 +493,7 @@ var postListDashBoard = new Vue({
   created: async function() {
     await this.getUserPostList();
     var $this = this;
-
+    console.log('created');
     setTimeout(function(){ 
       $this.$grid = $('.white-deck').masonry({
         itemSelector: '.white-panel',
@@ -547,7 +563,32 @@ app.route('/', () => {
     created: function(){
       this.fetchRecentActivity(5);
     },
-  })
+  });
+  
+  
+  var feature_post = new Vue({
+    el: '#feature-post',
+    data(){
+      return {
+        posts: [],  
+      }
+    },
+    methods:{
+      fetchFeaturePost(){
+        $.get('/getFeaturePost', {limit:5}, (response) => {
+          var objs = JSON.parse(response);
+          
+          for(var i=0; i<objs.length; i++){
+            objs[i].content = JSON.parse(objs[i].content);
+          }
+          this.posts = objs;
+        });
+      }
+    },
+    created(){
+      this.fetchFeaturePost();
+    }
+  });
 });
 
 
@@ -579,18 +620,12 @@ app.route('/personalinfo', () => {
     methods: {
       getPostList: async function(){
         await $.get('/personalinfo/getPosts', {}, (response) => {
-          console.log('post', response);
-          
           var objs = JSON.parse(response);
           
           for(var i=0; i<objs.length; i++){
             objs[i].content = JSON.parse(objs[i].content);
           }
           this.posts = objs;
-          
-          let ckeditor = document.createElement('script');    
-          ckeditor.setAttribute('src',"https://platform-api.sharethis.com/js/sharethis.js#property=5d409348919c2c0012611ed5&product=custom-share-buttons");
-          document.head.appendChild(ckeditor);
         });
       }
     },

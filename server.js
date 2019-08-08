@@ -269,6 +269,44 @@ async function getActionOnPosts(action_id){
 }
 
 
+app.get('/getFeaturePost', (request, response) => {
+  G.session = request.session;
+  var params = request.query;
+  
+  var q = `
+    SELECT p.id as post_id, p.user__id AS user_id, u.username as name, p.title as title, 
+       p.content as content, p.description as description, p.create_timestamp as create_timestamp,
+       p.last_modified_timestamp as last_modified_timestamp
+    FROM posts p
+    INNER JOIN users u ON p.user__id=u.id
+    ORDER BY create_timestamp DESC`;
+  if (params.limit){
+    q += ` LIMIT ${params.limit}`;
+  }
+  
+  db.all(q, [], async function(error, posts){
+    for(let i=0; i<posts.length; i++){
+      q = `
+      SELECT action_target__id, user_action_type__id, count(*) as count FROM user_action ua
+          INNER JOIN full_log_user_action flua ON flua.action_target_type='u2p' AND ua.full_log_user_action__id=flua.id
+          WHERE action_target__id=?
+          GROUP BY action_target__id, user_action_type__id`;
+      let user_action_count = (await db.allAsync(q, [posts[i].post_id]).catch((ae) => { throw new Error(ae) }));
+      let filter = user_action_count.filter((p) =>{
+        return p.user_action_type__id == 1;
+      });
+      posts[i].view_count = (filter.length) ? filter[0].count : 0;
+      
+      filter = user_action_count.filter((p) =>{
+        return p.user_action_type__id == 2;
+      });
+      posts[i].star_count = (filter.length) ? filter[0].count : 0;
+    }
+    console.log('feature posts', posts);
+    response.send(JSON.stringify(posts));
+  });
+  
+});
 app.get('/dashboard/getPosts', async (request, response) => {
   try {
     G.session = request.session;
@@ -569,7 +607,13 @@ app.get('/i', async (request, response) => {
     if(!view_status){//if this is the first time user is viewing
       q = `INSERT INTO full_log_user_action (user__id, action_target_type, action_target__id, user_action_type__id)
             VALUES (?, 'u2p', ?, 1)`;
-      db.run(q, [user_id, +params.post_id], (err) => {if(err) throw new Error(err)});
+      db.run(q, [user_id, +params.post_id], function(err){
+        if(err) throw new Error(err)
+        q = `INSERT INTO user_action (full_log_user_action__id) VALUES (?)`;
+        db.run(q, [this.lastID], (_err) => { if(_err) throw new Error(_err);});
+      });
+      
+      
     }
   }
 
