@@ -1,0 +1,71 @@
+<% include ./include.css.ejs %>
+<% include ./include.js.ejs %>
+<% include ./nav.ejs %>
+
+<br><br>
+
+<style>
+.simple-pagination ul {
+	margin: 0 0 20px;
+	padding: 0;
+	list-style: none;
+	text-align: center;
+}
+
+.simple-pagination li {
+	display: inline-block;
+	margin-right: 5px;
+}
+
+.simple-pagination li a,
+.simple-pagination li span {
+	color: #666;
+	padding: 5px 10px;
+	text-decoration: none;
+	border: 1px solid #EEE;
+	background-color: #FFF;
+	box-shadow: 0px 0px 10px 0px #EEE;
+}
+
+.simple-pagination .current {
+	color: #FFF;
+	background-color: #FF7182;
+	border-color: #FF7182;
+}
+
+.simple-pagination .prev.current,
+.simple-pagination .next.current {
+	background: #e04e60;
+}
+  
+/*   .bg-purple { background-color: var(--blue); } */
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/simplePagination.js/1.6/jquery.simplePagination.js"></script>
+<main id='recent-activity-page' role="main" class="container">
+  
+  
+  
+<!--     <div class="d-flex align-items-center p-3 my-3 text-white-50 bg-purple rounded box-shadow">
+      <img class="mr-3 logo" src="https://cdn.glitch.com/81be7dd8-00c3-4077-b658-479b65c93098%2Ffeac67ed-a868-46f6-a867-7c69d772d51b_200x200%20(4).png?v=1565189956579" alt="" width="48" height="48">
+      <div class="lh-100">
+        <h6 class="mb-0 text-white lh-100">IdeaChain</h6>
+                  <small>Since 2011</small>
+      </div>
+    </div> -->
+
+  <div class="my-3 p-3 bg-white rounded box-shadow">
+    <h6 class="border-bottom border-gray pb-2 mb-0">Recent activities</h6>
+    
+    <div class="list-wrapper">
+      <recent-activity-item v-for="(activity, index) in recent_activity_list"
+                              :activity_detail=activity>
+      </recent-activity-item>
+    </div>
+  </div>
+  <div id="pagination-container"></div>
+</main>
+
+
+<script src="/client.js"></script>
+<% include ./footers.ejs %>
