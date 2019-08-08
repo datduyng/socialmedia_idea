@@ -19,12 +19,9 @@ body,html{
 	width: 100%;
 	height: 100%;
 	padding: 0;
-	background: #ECEFF1;
+/* 	background: #ECEFF1; */
 }
 
-.row{
-	margin: 0 auto;
-}
 
 /*<Header CSS>*/
 
@@ -195,20 +192,20 @@ body,html{
 } 
 </style>
 <head>
-  <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-  <script>
-    (adsbygoogle = window.adsbygoogle || []).push({
-      google_ad_client: "ca-pub-9944624651731952",
-      enable_page_level_ads: true
-    });
-  </script>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+  
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="Dat Nguyen">
+  <% include ./include.css.ejs %>
+  <% include ./include.js.ejs %>
 </head>
 
 <body>
 
 	<nav class="navbar navbar-expand-lg navbar-dark bg-primary flex-nowrap flex-row flex-row" role="navigation">
-		<div class="container-fluid">
+		<div class="container">
 			<a class="navbar-brand heading" href="#" style='font-size:30px'>Idea<strong>Chain</strong></a>
 			<ul class="nav navbar-nav flex-row justify-content-between ml-auto">
 				<li class="dropdown">
@@ -257,68 +254,130 @@ body,html{
 	<br><br>
 
 	<!-- Header End -->
+  <div class='container'>
+    
+    <div class="first-box row">
 
-	<div class="container-fluid first-box row">
+      <div class="about-box col-sm-7 ">
+        <div class="content" style="float:left; background: #AB47BC;">
+          <h3 class="title"> Join a productive media</h3>
+          <p class="text"> We believe that social media should be a productive place to share idea and projects. Let's us help find other who have the same idea and interest as you</p>
+        </div>
 
-		<div class="container about-box col-sm-7 ">
-			<div class="content" style="float:left; background: #AB47BC;">
-				<h3 class="title"> Join a productive media</h3>
-				<p class="text"> We believe that social media should be a productive place to share idea and projects. Let's us help find other who have the same idea and interest as you</p>
-			</div>
+        <div class="content" style="float:right; background: #009688;">
+          <h3 class="title">Projectify idea</h3>
+          <div class='float-left pr-3'>
+            <img class='img-thumbnail rounded ' width='200' height='200' src="https://media.gettyimages.com/vectors/business-success-formula-idea-action-success-business-university-vector-id681639476">
+          </div>
+          <p class="text pr"> Put your idea to action. Let's us help reach out to users with same interest. </p>
+        </div>
 
-			<div class="content" style="float:right; background: #009688;">
-				<h3 class="title">Projectify idea</h3>
-				<div class='float-left pr-3'>
-					<img class='img-thumbnail rounded ' width='200' height='200' src="https://media.gettyimages.com/vectors/business-success-formula-idea-action-success-business-university-vector-id681639476">
-				</div>
-				<p class="text pr"> Put your idea to action. Let's us help reach out to users with same interest. </p>
-			</div>
+        <div class="content" style="float:left; background: #FF7043;">
+          <h3 class="title"> A team that builds sustainable value</h3>
+          <p class="text"> We have dedicated teams covering a wide range of technology, business and process innovation.Our commitment of substantial resources—people, capital, time, and ideas—to drive technology innovation.</p>
+        </div>
+      </div>
+      <div class="clearfix"></div>
+      <!-- Sign UP Box	 -->
+      <div class="mt-5 signup-box h50 col-md-4 clearfix">
+        <div class='col-md-12' style="background: rgba(51,51,51,.7);">
+          <div class="container heading">
+            <p class="text-center">Sign Up</p>
+          </div>
 
-			<div class="content" style="float:left; background: #FF7043;">
-				<h3 class="title"> A team that builds sustainable value</h3>
-				<p class="text"> We have dedicated teams covering a wide range of technology, business and process innovation.Our commitment of substantial resources—people, capital, time, and ideas—to drive technology innovation.</p>
-			</div>
-		</div>
-		<div class="clearfix"></div>
-		<!-- Sign UP Box	 -->
-		<div class="mt-5 signup-box h50 col-md-4 clearfix">
-			<div class='col-md-12' style="background: rgba(51,51,51,.7);">
-				<div class="container-fluid heading">
-					<p class="text-center">Sign Up</p>
-				</div>
+          <form id="signup-form" action='/signup' method="POST">
+            <div class="form-group">
+              <label>Username *:</label>
+              <input type="text" minlength="6" name="username" placeholder=".." class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="email">Email *:</label>
+              <input type="email" name="email" class="form-control" id="email" placeholder="example@domain.com" required>
+            </div>
+            <div class="form-group">
+              <label for="mainpassword">Password *:</label>
+              <input type="password" name="password" minlength="6" placeholder="Password" id='mainpassword' class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="confirm">Confirm password *:</label>
+              <input type="password" name="confirm" minlength="6" placeholder="Confirm Password" class="form-control" required>
+            </div>
 
-				<form id="signup-form" action='/signup' method="POST">
-					<div class="form-group">
-						<label>Username *:</label>
-						<input type="text" minlength="6" name="username" placeholder=".." class="form-control" required>
-					</div>
-					<div class="form-group">
-						<label for="email">Email *:</label>
-						<input type="email" name="email" class="form-control" id="email" placeholder="example@domain.com" required>
-					</div>
-					<div class="form-group">
-						<label for="mainpassword">Password *:</label>
-						<input type="password" name="password" minlength="6" placeholder="Password" id='mainpassword' class="form-control" required>
-					</div>
-					<div class="form-group">
-						<label for="confirm">Confirm password *:</label>
-						<input type="password" name="confirm" minlength="6" placeholder="Confirm Password" class="form-control" required>
-					</div>
+            <input type="submit" class="btn btn-info" value="Sign-Up">
+          </form>
+        </div>
+      </div>
+      <!-- Sign Up Box End -->
+    </div>
 
-					<input type="submit" class="btn btn-info" value="Sign-Up">
-				</form>
-			</div>
-		</div>
-		<!-- Sign Up Box End -->
-	</div>
 
+      <!-- App Info -->
+    <div class='row justify-content-center'>
+
+      <div id='post-list-index-page' class='col-md-6'>
+        <div id='post-list-dashboard' ref='post_list_dashboard' class="white-deck">
+          <div class='grid-sizer col-md-6'></div>
+          <div class="gutter-sizer"></div>
+          <!--- >>>>>>Post-->
+          <post-item v-for="(post, index) in posts"
+                     :post_id='post.post_id'
+                     :title='post.title'
+                     :username='post.name'
+                     :star_status = 'post.star_status'
+                     :content='post.content'
+                     :tags = 'post.tags'
+                     :create_timestamp='post.create_timestamp'>
+          </post-item>
+          <!--- <<<<<<<Post-->
+        </div>
+      </div>
+
+
+      <!--Top User -->
+      <div class='col-md-3'>
+        <div class="my-3 p-3 bg-white rounded box-shadow">
+          <h6 class="border-bottom border-gray pb-2 mb-0">Top IdeaChainer</h6>
+          <div class="media text-muted pt-3 list-item">
+           <img src="https://cdn.glitch.com/81be7dd8-00c3-4077-b658-479b65c93098%2Ffeac67ed-a868-46f6-a867-7c69d772d51b_200x200%20(4).png?v=1565189956579" alt="" class="bd-placeholder-img mr-2 rounded" width="32" height="32">
+           <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
+            <strong class="d-block text-gray-dark">@andrew</strong>
+           </p>
+          </div>
+        </div>
+      </div>
+      <!--End Top User -->
+
+      <!--Recent Activity -->
+      <div id='index-page-recent-activity' class='col-md-3'>
+       <div class="my-3 p-3 bg-white rounded box-shadow">
+        <h6 class="border-bottom border-gray pb-2 mb-0">Recent activities</h6>
+
+        <div class="list-wrapper">
+          <recent-activity-item v-for="(activity, index) in recent_activity_list"
+                                  :activity_detail=activity>
+          </recent-activity-item>
+        </div>
+
+        <small class="d-block text-right mt-3">
+          <a href="/activity">All updates</a>
+        </small>
+
+       </div>
+      </div>
+      <!--End Recent Activity -->
+
+    </div>
+    <!-- 		End App Info -->
+    
+    
+  </div>
+
+  
+  
+  
 	<footer>
 
 	</footer>
-	<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.1/jquery.validate.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 
 	<script>
 		$(function() {
@@ -348,6 +407,8 @@ body,html{
 			});
 		});
 	</script>
+  
+  <script src="/client.js"></script>
 </body>
 
 </html>

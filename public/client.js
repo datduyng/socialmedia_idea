@@ -28,6 +28,62 @@ var social = Vue.mixin({
   }
 });
 
+var post_list_mixin = Vue.mixin({
+  data() {
+    return {
+      posts: [],
+      $grid: undefined
+    }
+  },
+  methods: {
+    getUserPostList: function(limit=null){
+      console.log('call', 'getUserPostList')
+      $.get('/dashboard/getPosts', {limit: limit}, (response) => {
+        
+        let data = JSON.parse(response);
+        console.log('data post ', data);
+        var objs = data.posts
+        var starred_posts = data.stars.map(row => row.post_id);
+        console.log('stared_posts', starred_posts);
+        starred_posts = new Set(starred_posts);
+        console.log('stared_posts became set', starred_posts);
+        for(var i=0; i<objs.length; i++){
+          if(starred_posts.has(parseInt(objs[i].post_id)) ){
+            objs[i].star_status = true;
+          }else{
+            objs[i].star_status = false;
+          }
+          objs[i].content = JSON.parse(objs[i].content);
+          console.log('tags', objs[i].tags);
+        }
+        console.log('objs', objs);
+        this.posts = objs;
+      });
+    }
+  }
+});
+
+const mixin_recent_activity = {
+  data() {
+    return {
+      recent_activity_list: [],
+    }
+  },
+  methods: {
+    fetchRecentActivity(limit=1000){
+      let data = {
+        limit: limit
+      };
+      $.get('/activity/fetchRecentActivity', data, (response) => {
+        var recent_activity = JSON.parse(response);
+        console.log('lim', limit, recent_activity);
+        this.recent_activity_list = recent_activity;
+      });
+    }
+  }
+};
+
+
 Vue.component('recent-activity-item',{
   props: {
     activity_detail: Object
@@ -165,15 +221,6 @@ Vue.component('user-item', {
   }
 });
 
-// Vue.component('post-item', {
-//   props: ['name', 'content', 'status', 'create_timestamp'],
-//   template: `
-//   <li>
-//     <span> Created by: {{ this.name }} at {{this.create_timestamp}}</span><br>
-//     <span> {{ this.content }} </span>
-//   </li>
-//   `
-// });
 
 Vue.component('related-post-item', {
   props: {
@@ -358,24 +405,15 @@ var user_activity_list = new Vue({
   }
 });
 
-const mixin_recent_activity = {
-  data() {
-    return {
-      recent_activity_list: [],
-    }
+
+
+var index_recent_activity_page = new Vue({
+  el: '#index-page-recent-activity',
+  mixins: [mixin_recent_activity],
+  created: function(){
+    this.fetchRecentActivity(5);
   },
-  methods: {
-    fetchRecentActivity(limit=1000){
-      let data = {
-        limit: limit
-      };
-      $.get('/activity/fetchRecentActivity', data, (response) => {
-        var recent_activity = JSON.parse(response);
-        this.recent_activity_list = recent_activity;
-      });
-    }
-  }
-}
+})
 
 var recent_activity_page = new Vue({
   el: '#recent-activity-page',
@@ -448,49 +486,30 @@ var postList = new Vue({
   }
 });
 
+
+var post_list_index_page = new Vue({
+  el: '#post-list-index-page', 
+  mixins: [post_list_mixin],
+  created: function(){
+    // this.getPostList(4);
+  }
+});
+
 var postListDashBoard = new Vue({
   el: '#post-list-dashboard', 
-  data: {
-    posts: [],
-    $grid: undefined
-  },
+  mixins: [post_list_mixin],
   methods: {
-    getPostList: async function(){
-      await $.get('/dashboard/getPosts', {}, (response) => {
-        
-        let data = JSON.parse(response);
-        console.log('data post ', data);
-        var objs = data.posts
-        var starred_posts = data.stars.map(row => row.post_id);
-        console.log('stared_posts', starred_posts);
-        starred_posts = new Set(starred_posts);
-        console.log('stared_posts became set', starred_posts);
-        for(var i=0; i<objs.length; i++){
-          if(starred_posts.has(parseInt(objs[i].post_id)) ){
-            objs[i].star_status = true;
-          }else{
-            objs[i].star_status = false;
-          }
-          objs[i].content = JSON.parse(objs[i].content);
-          console.log('tags', objs[i].tags);
-        }
-        console.log('objs', objs);
-        this.posts = objs;
-      });
-      
-    setTimeout(function() { 
-      this.$grid = $('.white-deck').masonry({
-        itemSelector: '.white-panel',
-        columnWidth: '.grid-sizer',
-        percentPosition: true
-      });
-    }, 1000);
-      
-    }
   },
   created: function() {
-    this.getPostList();
-    
+    console.log("are you callingl")
+    this.getUserPostList();
+  },
+  updated: function(){
+    this.$grid = $('.white-deck').masonry({
+      itemSelector: '.white-panel',
+      columnWidth: '.grid-sizer',
+      percentPosition: true
+    });
   }
 });
 

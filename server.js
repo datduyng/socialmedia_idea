@@ -272,6 +272,7 @@ async function getActionOnPosts(action_id){
 app.get('/dashboard/getPosts', async (request, response) => {
   try {
     G.session = request.session;
+    var params = request.query;
     var q = `
       SELECT p.id as post_id, p.user__id AS user_id, u.username as name, p.title as title, 
          p.content as content, p.description as description, p.create_timestamp as create_timestamp,
@@ -280,8 +281,12 @@ app.get('/dashboard/getPosts', async (request, response) => {
       INNER JOIN users u ON p.user__id=u.id
       -- WHERE p.user__id != ? 
       ORDER BY create_timestamp DESC`;
-    var param = [];//[G.session.user_id]; 
-    var posts = await getPost(q, param);
+    if (params.limit){
+      q += ` LIMIT ${params.limit}`;
+    }
+    
+    var qparam = [];//[G.session.user_id]; 
+    var posts = await getPost(q, qparam);
     let stars = await getActionOnPosts(2);
     console.log('stars', stars);
     let data = {
