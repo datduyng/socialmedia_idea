@@ -48,35 +48,38 @@ var post_list_mixin = {
   data() {
     return {
       posts: [],
-      $grid: undefined
+      $grid: undefined,
+      currentTag: 'all',
+      currentSortTag: null
     }
   },
+  computed:{
+
+  },
   methods: {
-    getUserPostList: async function(limit=null){
-      console.log('call', 'getUserPostList')
-      await $.get('/dashboard/getPosts', {limit: limit}, (response) => {
-        
-        let data = JSON.parse(response);
-        console.log('data post ', data);
-        var objs = data.posts
-        var starred_posts = data.stars.map(row => row.post_id);
-        console.log('stared_posts', starred_posts);
-        starred_posts = new Set(starred_posts);
-        console.log('stared_posts became set', starred_posts);
-        for(var i=0; i<objs.length; i++){
-          if(starred_posts.has(parseInt(objs[i].post_id)) ){
-            objs[i].star_status = true;
-          }else{
-            objs[i].star_status = false;
-          }
-          objs[i].content = JSON.parse(objs[i].content);
-          console.log('tags', objs[i].tags);
-        }
-        console.log('objs', objs);
-        this.posts = objs;
+    filter: function(tag){
+      this.currentTag = tag;
+    },
+    sort: function(tag){
+      this.currentSortTag = tag; 
+    },
+    filteredPost: function(){
+      var filter = this.currentTag;
+      var filtered =  this.posts.filter(function(p) {
+          return p.tagList.indexOf(filter) !== -1;
       });
+
+      if(!this.currentSortTag){
+        return filtered;
+      }
+      var $this = this;
+      var sorted = filtered.sort(function(p1, p2) {
+        return  p2[$this.currentSortTag] - p1[$this.currentSortTag]; // most recent p2 - p1
+      });
+
+      return sorted;
     }
-  }
+  },
 };
 
 const mixin_recent_activity = {
@@ -209,7 +212,6 @@ Vue.component('user-item', {
   props: ['id', 'name', 'email', 'password'],
   template: `
 
-
           <div class="list-group-item list-group-item-action active">
             <div class="notification-info">
               <div class="notification-list-user-img"><img src="https://picsum.photos/id/354/100/100" alt="" class="user-avatar-md rounded-circle"></div>
@@ -255,13 +257,33 @@ Vue.component('related-post-item', {
 Vue.component('post-item', {
   props: {
     post_id: Number, 
+    post: Object,
     username: String,
     title: String, 
     content: Object,
     status: String, 
     create_timestamp: Number, 
     tags: Array,
-    star_status: Boolean
+    creator_avatar: {
+      type: String,
+      default: null,
+    },
+    thumbnail: {
+      type: String,
+      default: null
+    },
+    star_status: {
+      type: Boolean, 
+      default: true //true: off
+    },
+    user_functionality:{
+      type: Boolean,
+      default: true
+    },
+    card_class:{
+      type: String, 
+      default: 'col-md-4 white-panel mt-1'
+    }
   },
   mixins: [social_mixin],
   data: function () {
@@ -272,12 +294,12 @@ Vue.component('post-item', {
     }
   },
   template: `
-<div class="card gedf-card white-panel col-lg-4 mb-1">
+<div :class="card_class+' mb-1'">
   <div class="card-header">
     <div class="d-flex justify-content-between align-items-center">
       <div class="d-flex justify-content-between align-items-center">
         <div class="mr-2">
-          <img class="rounded-circle" width="45" src="https://picsum.photos/50/50" alt="">
+          <img class="rounded-circle" width="45" :src="(creator_avatar)?creator_avatar:'https://picsum.photos/50/50'" alt="">
         </div>
         <div class="ml-2">
           <div class="h5 m-0">@{{ this.username }}</div>
@@ -307,7 +329,7 @@ Vue.component('post-item', {
       <h5 class="card-title">{{ this.title }}</h5>
     </a>
     <p class="card-text">
-      <img :src="this.content.pin" alt="..." class="rounded img-thumbnail">
+      <img v-if="this.thumbnail" :src="this.thumbnail" alt="..." class="rounded img-thumbnail">
       {{ get_text_content() }}
     </p>
     <div>
@@ -344,7 +366,6 @@ Vue.component('post-item', {
 
     },
     redirect_post: function(post){
-      console.log('post', post);
       alert('redirected ' + this.post_id + ' end');
       window.location.href = this.get_redirect_link();
     },
@@ -352,7 +373,6 @@ Vue.component('post-item', {
       return `http://ideachain.glitch.me/i?post_id=${this.post_id}`;
     },
     get_text_content: function() {
-      console.log('post conten ln', this.content.text.length );
       let suff = ""; 
       if(this.content.text.length > 200) suff = "...";
       return this.content.text.substring(0, 200)+suff ; 
@@ -363,24 +383,39 @@ Vue.component('post-item', {
     },
     
     toggle_star: function() {
-      this.user_action.star_toggle = !this.user_action.star_toggle;
-      //type 1: view, type 2: star
-      let data = {
-        action_id: 2,
-        post_id: this.post_id
-      };
-      $.post('/actionOnPost', data, (response) => {
-        console.log('response', response);
-      }); 
+      if(this.user_functionality){
+        this.user_action.star_toggle = !this.user_action.star_toggle;
+        //type 1: view, type 2: star
+        let data = {
+          action_id: 2,
+          post_id: this.post_id
+        };
+        $.post('/actionOnPost', data, (response) => {
+        }); 
+      }else{
+        this.user_action.star_toggle = true;
+        notificationToast(`Login to get full user experience`, "info");
+      }
     }
   }        
 });
+
 /******************************************************************************
  ******************************************************************************
  ***********************************Vue App ***********************************
  ******************************************************************************
  *****************************************************************************/
-var user_activity_list = new Vue({
+var $V = {
+  initVueInstance: function(name){
+    if(!this[name]){
+      throw new Error(`Vue instance ${name} does not exist in VueInstanceManager`);
+    }
+    this[name] = new Vue(this[name]);
+    return this[name];
+  }
+}
+
+$V.user_activity_list = {
   // el: '#user-activity-list',
   data: {
     all_activity: []
@@ -392,7 +427,6 @@ var user_activity_list = new Vue({
     },
     getUserActivityList: function() {
       $.get('/getUserActivityList', {limit:10}, (response) => {
-        console.log('activity list', response); 
         var all_activity = JSON.parse(response);
         //action_id, actioner, passiver, action_target_type, action_target__id, user_action_type__id, timestamp, username, title
         for(var i=0; i<all_activity.length; i++){
@@ -412,16 +446,15 @@ var user_activity_list = new Vue({
         }
         
         this.all_activity = all_activity;
-        console.log('all_activity', this.all_activity);
       });
     }
   },
   created: function(){
     this.getUserActivityList();
   }
-});
+};
 
-var friendList = new Vue({
+$V.friendList = {
   // el: '#friend-list',
   data:{
     users: []
@@ -433,16 +466,15 @@ var friendList = new Vue({
     getFriendList: function(){
       $.get('/getFriendList', {}, (response) => {
         this.users = JSON.parse(response);
-        console.log('get Friend list', this.users);
       });
     }
   },
   created: function() {
     this.getFriendList();
   }
-});
+};
 
-var userList = new Vue({
+$V.userList = {
   data: {
     users: [], 
     message : "hello world", 
@@ -452,8 +484,7 @@ var userList = new Vue({
     addFriend: function(index){
       let params = this.users[index];
       $.post('/addFriend', params, (response) => {});
-      friendList.addFriend(params);
-      console.log(this.users[index]);
+      $V.friendList.addFriend(params);
       notificationToast(`You are now friend with <a href="http://ideachain.glitch.me/personalinfo?user_id=${this.users[index].id}"> ${this.users[index].username}</a>`);
       this.users.splice(index, 1);
     },
@@ -465,30 +496,45 @@ var userList = new Vue({
     }
   },
   created: function(){
-    console.log('created userlist');
     this.getOtherPeopleList();
   }
-});
+};
 
-var postListDashBoard = new Vue({
+$V.postListDashBoard = {
   mixins: [post_list_mixin],
   methods: {
   },
   created: async function() {
     await this.getUserPostList();
     var $this = this;
-
-    setTimeout(function(){ 
-      $this.$grid = $('.white-deck').masonry({
-        itemSelector: '.white-panel',
-        columnWidth: '.grid-sizer',
-        percentPosition: true
-      }); 
-    }, 1000 );
+  },
+  methods:{
+    getUserPostList: async function(limit=null){
+      await $.get('/dashboard/getPosts', {limit: limit}, (response) => {
+        
+        let data = JSON.parse(response);
+        var objs = data.posts
+        var starred_posts = data.stars.map(row => row.post_id);
+        starred_posts = new Set(starred_posts);
+        for(var i=0; i<objs.length; i++){
+          if(starred_posts.has(parseInt(objs[i].post_id)) ){
+            objs[i].star_status = true;
+          }else{
+            objs[i].star_status = false;
+          }
+          objs[i].content = JSON.parse(objs[i].content);
+          let tagObjList = objs[i].tags;
+          let tagList = objs[i].tags.map(function(e){ return e.tag; });
+          tagList.push('all');
+          objs[i].tagList = tagList;
+        }
+        this.posts = objs;
+      });
+    }
   },
   updated: function(){
   }
-});
+};
 
 /******************************************************************************
  ******************************************************************************
@@ -517,7 +563,6 @@ app.route('/activity', () => {
           var items = $(".list-wrapper .list-item");
           var numItems = items.length;
           var perPage = 10;
-          console.log('runing mounted', numItems);
           items.slice(perPage).hide();
 
           $("#pagination-container").pagination({
@@ -547,57 +592,85 @@ app.route('/', () => {
     created: function(){
       this.fetchRecentActivity(5);
     },
-  })
-});
-
-
-app.route('/dashboard', () => {
-  user_activity_list.$mount('#user-activity-list');
-  userList.$mount('#user-list');
-  friendList.$mount('#friend-list');
-  postListDashBoard.$mount('#post-list-dashboard');
-});
-
-app.route('/i', () => {
-  user_activity_list.$mount('#user-activity-list');
-  userList.$mount('#user-list');
-  friendList.$mount('#friend-list');
-});
-
-app.route('/personalinfo', () => {
-  user_activity_list.$mount('#user-activity-list');
-  userList.$mount('#user-list');
-  friendList.$mount('#friend-list');
-  postListDashBoard.$mount('#post-list-dashboard');
-
-  var postList = new Vue({
-    el: '#post-list', 
-    mixin: [social_mixin],
-    data: {
-      posts: []
+  });
+  
+  
+  var feature_post = new Vue({
+    el: '#feature-post',
+    data(){
+      return {
+        posts: [],
+        $grid: undefined,
+      }
     },
-    methods: {
-      getPostList: async function(){
-        await $.get('/personalinfo/getPosts', {}, (response) => {
-          console.log('post', response);
-          
+    methods:{
+      fetchFeaturePost(){
+        var $this = this;
+        $.get('/getFeaturePost', {limit:5}, (response) => {
           var objs = JSON.parse(response);
           
           for(var i=0; i<objs.length; i++){
             objs[i].content = JSON.parse(objs[i].content);
           }
-          this.posts = objs;
-          
-          let ckeditor = document.createElement('script');    
-          ckeditor.setAttribute('src',"https://platform-api.sharethis.com/js/sharethis.js#property=5d409348919c2c0012611ed5&product=custom-share-buttons");
-          document.head.appendChild(ckeditor);
+          $this.posts = objs;
+          // setTimeout(function(){ 
+          //   $this.$grid = $('.white-deck').masonry({
+          //     itemSelector: '.white-panel',
+          //     columnWidth: '.grid-sizer',
+          //     percentPosition: true
+          //   }); 
+          // }, 1000);
         });
       }
     },
-    created: function() {
-      this.getPostList();
+    created(){
+      this.fetchFeaturePost();
     }
   });
+});
+
+
+app.route('/dashboard', () => {
+  $V.initVueInstance('user_activity_list').$mount('#user-activity-list');
+  $V.initVueInstance('userList').$mount('#user-list');
+  $V.initVueInstance('friendList').$mount('#friend-list');
+  $V.initVueInstance('postListDashBoard').$mount('#post-list-dashboard');
+});
+
+app.route('/i', () => {
+  $V.initVueInstance('user_activity_list').$mount('#user-activity-list');
+  $V.initVueInstance('userList').$mount('#user-list');
+  $V.initVueInstance('friendList').$mount('#friend-list');
+});
+
+app.route('/personalinfo', () => {
+  $V.initVueInstance('user_activity_list').$mount('#user-activity-list');
+  $V.initVueInstance('userList').$mount('#user-list');
+  $V.initVueInstance('friendList').$mount('#friend-list');
+  $V.initVueInstance('postListDashBoard').$mount('#post-list-dashboard');
+
+  // var postList = new Vue({
+  //   el: '#post-list', 
+  //   mixin: [social_mixin],
+  //   data: {
+  //     posts: []
+  //   },
+  //   methods: {
+  //     getPostList: async function(){
+  //       await $.get('/personalinfo/getPosts', {}, (response) => {
+  //         var objs = JSON.parse(response);
+          
+  //         for(var i=0; i<objs.length; i++){
+  //           objs[i].content = JSON.parse(objs[i].content);
+  //         }
+  //         this.posts = objs;
+  //       });
+  //     }
+  //   },
+  //   created: function() {
+  //     this.getPostList();
+  //   }
+  // });
 });
 
 function addFriend(other_user_id){
@@ -609,32 +682,49 @@ function addFriend(other_user_id){
   });
 }
 
-function updatePersonalInfo(){
+async function updatePersonalInfo(){
     var formData = getFormData($('#update-personal-info-form'));
   
     formData.user_interest = $('#user-interest-select').val().split(',');
-    console.log("post updatePersonalInfo", formData);
+    
   
-    console.log('formData', formData);
+    if ($('#user-avatar')[0].files.length){
+      formData.user_avatar = await $('#user-avatar')[0].files[0].convertToBase64();
+      if(formData.user_avatar.error){
+        notificationToast(formData.user_avatar.error, "error", 1000);
+        return;
+      }
+    }
 
     $.post('/personalinfo/update', formData, function(response){
-      console.log('response personalinfo update', response);
     });
 }
 
-function handleCreateIdeaForm(){
+async function handleCreateIdeaForm(){
   var formData = getFormData($('#create-idea-form'));
   formData.tags = $('#selectize-post-tags').val().split(',');
+  if ($('#post-thumbnail')[0].files.length){
+    formData.thumbnail = await $('#post-thumbnail')[0].files[0].convertToBase64();
+    if(formData.thumbnail.error){
+      notificationToast(formData.thumbnail.error, "error", 1000);
+      return;
+    }
+  }
+
   formData.content = {
-    pin: formData.pin,
     text : formData.text,
   };
-  console.log("post idea formData", formData);
-
   $.post('/createIdea', formData, (response) => {
-    console.log("added", response);
+    // TODO: Live update after Add
+    // Need to fix client side for this part
+    //
+
     var obj = JSON.parse(response)[0];
-    obj.content = JSON.parse(obj.content);
+    // obj.content = JSON.parse(obj.content);
+    // let tagList = obj.tags.map(function(e){ return e.tag; });
+    // tagList.push('all');
+    // obj.tagList = tagList;
+    // $V.postListDashBoard.posts.push(obj);
     window.location.href = `http://ideachain.glitch.me/i?post_id=${obj.post_id}`;
   });
 }
@@ -709,14 +799,12 @@ function createUploadPostBootbox(){
                 </div>
               </div>
 
-              <div class="form-group mt-4">
+              <div class='row align-items-center mt-4'>
+                <div class="form-group col">
                 <div class="custom-file">
-
-    <!--                     Toggle for input image pin -->
-    <!--                     <input type="file" name='pin' class="custom-file-input">
-                  <label class="custom-file-label" for="customFile">Idea Visualization</label> -->
-
-                  <input type="text" name='pin' class="form-control" placeholder="Idea Visualization">
+                  <input type="file" name='post_thumbnail' class="custom-file-input" id='post-thumbnail'>
+                  <label class="custom-file-label" for="customFile">Upload image</label>
+                </div>
                 </div>
               </div>
 
@@ -734,16 +822,7 @@ function createUploadPostBootbox(){
               </div>
             <form>
           </div>
-          <div class="tab-pane fade" id="images" role="tabpanel" aria-labelledby="images-tab">
-            <div class="form-group">
-              <div class="custom-file">
-                <input type="file" class="custom-file-input" id="customFile">
-                <label class="custom-file-label" for="customFile">Upload image</label>
-              </div>
-            </div>
-            <div class="py-4"></div>
-          </div>
-
+    
         </div>
 
         <div class="btn-toolbar justify-content-between">
@@ -842,10 +921,8 @@ function handleUserFeedbackForm(){
   });
   var $form = $('#user-feedback-form');
   var formData = getFormData($form);
-  console.log('user feedback form', formData);
 
   $.post('/submitUserFeedback', formData, function(response){
-    console.log(response);
     $.Toast.hideToast();
     $form[0].reset();
     notificationToast(`Thank you for your feedback!`, "success");
@@ -979,9 +1056,9 @@ function createUpdatePersonalInfoBootbox(_todelete){
           <div class="card-body pt-5">
 
             <div class="picture-container">
-                <div class="avartar-picture">
-                    <img src="https://lh3.googleusercontent.com/LfmMVU71g-HKXTCP_QWlDOemmWg4Dn1rJjxeEsZKMNaQprgunDTtEuzmcwUBgupKQVTuP0vczT9bH32ywaF7h68mF-osUSBAeM6MxyhvJhG6HKZMTYjgEv3WkWCfLB7czfODidNQPdja99HMb4qhCY1uFS8X0OQOVGeuhdHy8ln7eyr-6MnkCcy64wl6S_S6ep9j7aJIIopZ9wxk7Iqm-gFjmBtg6KJVkBD0IA6BnS-XlIVpbqL5LYi62elCrbDgiaD6Oe8uluucbYeL1i9kgr4c1b_NBSNe6zFwj7vrju4Zdbax-GPHmiuirf2h86eKdRl7A5h8PXGrCDNIYMID-J7_KuHKqaM-I7W5yI00QDpG9x5q5xOQMgCy1bbu3St1paqt9KHrvNS_SCx-QJgBTOIWW6T0DHVlvV_9YF5UZpN7aV5a79xvN1Gdrc7spvSs82v6gta8AJHCgzNSWQw5QUR8EN_-cTPF6S-vifLa2KtRdRAV7q-CQvhMrbBCaEYY73bQcPZFd9XE7HIbHXwXYA=s200-no" class="picture-src" id="wizardPicturePreview" title="">
-                    <input type="file" id="wizard-picture" class="">
+                <div class="avatar-picture">
+                    <img src="https://cutt.ly/4wyHWyV" class="picture-src" id="wizardPicturePreview" title="">
+                    <input type="file" id="user-avatar" class="">
                 </div>
                  <h6 class="">Choose Picture</h6>
 
@@ -1128,31 +1205,7 @@ function createUser(){
     var message = "Creating new user";
     var formData = getFormData($('#signup-form'));
     $.post('/signup', formData, function(response){
-      console.log(response);
     });
-}
-
-function notificationToast (message, toast_type='info'){
-//https://codeseven.github.io/toastr/demo.html
-  toastr[toast_type](message)
-
-  toastr.options = {
-    "closeButton": true,
-    "debug": false,
-    "newestOnTop": true,
-    "progressBar": false,
-    "positionClass": "toast-top-right",
-    "preventDuplicates": false,
-    "onclick": null,
-    "showDuration": "300",
-    "hideDuration": "1000",
-    "timeOut": "5000",
-    "extendedTimeOut": "1000",
-    "showEasing": "swing",
-    "hideEasing": "linear",
-    "showMethod": "fadeIn",
-    "hideMethod": "fadeOut"
-  }
 }
 
 /***********************Social media share**********************/

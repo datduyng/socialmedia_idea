@@ -18,7 +18,7 @@
        <div class="col-lg-8">
           <!-- the actual blog post: title/author/date/content -->
           <h1><a href=""><%= post.title %></a></h1>
-          <p class="lead"><i class="fa fa-user"></i> by <a href="">Author</a></p>
+          <p class="lead"><i class="fa fa-user"></i> by <a href="http://ideachain.glitch.me/personalinfo?user_id=<%=post.user_id%>">@<%= post.username %></a></p>
           <hr>
           <p><i class="fa fa-calendar"></i> Posted on <%=post.formatted_create_timestamp%></p>
           <p><i class="fa fa-tags"></i> Tags: 
@@ -29,11 +29,13 @@
          
           <hr>
           <div class='row'>
+            <% if( post.thumbnail ){ %>
             <div class='col-md-6'>
               <picture>
-                <img src="<%= post.content.pin %>" class="img-fluid img-thumbnail" alt="...">
+                <img src="<%= post.thumbnail %>" class="img-fluid img-thumbnail" alt="...">
               </picture>
             </div>
+            <% } %>
             <div class='col-md-6'>
               <div class='row'>
                 <%= view_count %> viewed <br>

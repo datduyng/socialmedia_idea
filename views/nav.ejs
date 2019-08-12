@@ -353,7 +353,7 @@
               <li class="nav-item dropdown">
   <!--               <a class="nav-link dropdown-toggle" href="http://example.com" id="dropdown07" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">User</a> -->
                 <a class="navbar-brand nav-link" href="#" data-toggle="dropdown" aria-haspopup="false" aria-expanded="false">
-                  <img src="https://s3.eu-central-1.amazonaws.com/bootstrapbaymisc/blog/24_days_bootstrap/logo_white.png" width="30" height="30" alt="logo">
+                  <img class='rounded-circle' src="<%=G.session.user_avatar%>" width="30" height="30" alt="logo">
                 </a>
                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdown07">
                   <label class="dropdown-header">@<%=G.session.username%></label>
@@ -425,7 +425,7 @@
                 suggestion: function(movie) {
                   return `<div>${movie.title} <small class='text-muted'>( ${movie.year})</span></div>`;
                 },
-                footer: `<div class='tt-cursor'> <a href='https://google.com'>Show more...</a></div>`
+                footer: `<div class='tt-cursor'> <a href='#'>Show more...</a></div>`
             }
         });
 

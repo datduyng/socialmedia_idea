@@ -1,6 +1,5 @@
 
 <% include ./include.css.ejs %>
-<link rel='stylesheet' href="<%=G.CDN%>/pinterest_grid/pinterest_grid.css" />
 <% include ./include.js.ejs %>
 <% include ./nav.ejs %>
 
@@ -24,7 +23,7 @@
     <div class="row justify-content-center">
 
       <!-- Left column -->
-      <div class="col-lg-8 gedf-main">
+      <div class="col-lg-8">
 
         <!--  >>>>>>>Upload post Panel -->
         <button type='button' class="btn btn-primary btn-lg btn-block" onclick="createUploadPostBootbox()">
@@ -32,25 +31,44 @@
         </button>
         <!--  <<<<<<Upload post Panel -->
         <br><br>
-        <h3>All activities</h3>
-
+        
         <!-- >>>>list of card -->
-        <div class='row'>
-          <div id='post-list-dashboard' ref='post_list_dashboard' class="white-deck">
-            <div class='grid-sizer col-md-4'></div>
-            <div class="gutter-sizer"></div>
+        <div id='post-list-dashboard'>
+          <div class='row'>
+            <h3>All activities</h3>
+          </div>
+          
+          <div class='row'>
+              <p>  Sort by: <a v-on:click="sort(null)"><span class="badge btn-primary">None</span></a>
+                            <a v-on:click="sort('create_timestamp')"><span class="badge btn-primary">Date</span></a>
+                Categories: <a v-on:click="filter('all')"><span class="badge btn-primary">all </span></a>
+                            <a v-on:click="filter('Arduino')"><span class="badge btn-primary">Arduino </span></a>
+                            <a v-on:click="filter('Fun')"><span class="badge btn-primary">Fun </span></a>
+                            <a v-on:click="filter('Hobbiest')"><span class="badge btn-primary">Hobbiest </span></a> 
+                            <a v-on:click="filter('Start Up')"><span class="badge btn-primary">Start Up </span></a>
+          </div>
+
+          <!-- <div  ref='post_list_dashboard' class="card-deck"> -->
+          <transition-group id='post-list-dashboard' name="list-complete" class="list-complete" tag="section">
+            <!-- <div class='grid-sizer col-md-4'></div>
+            <div class="gutter-sizer"></div> -->
             <!--- >>>>>>Post-->
-            <post-item v-for="(post, index) in posts"
+            <post-item v-for="(post, index) in filteredPost()"
                        :post_id='post.post_id'
                        :title='post.title'
                        :username='post.name'
                        :star_status = 'post.star_status'
                        :content='post.content'
                        :tags = 'post.tags'
-                       :create_timestamp='post.create_timestamp'>
+                       :create_timestamp='post.create_timestamp'
+                       :thumbnail='post.thumbnail'
+                       :creator_avatar='post.creator_avatar'
+                       :card_class="'list-complete-item white-panel mr-1'"
+                       :key='post.post_id'>
             </post-item>
             <!--- <<<<<<<Post-->
-          </div>
+          <!-- </div> -->
+          </transition-group>
           <!-- <<<<<list of card -->
         </div>
 
@@ -153,16 +171,25 @@
         </div>
         <!-- <<<<<<<<Friends Board -->
 
+        
+<!--         Explore section -->
         <div class="card gedf-card">
           <div class="card-body">
-            <h5 class="card-title">Idealify timelines(Constructing) </h5>
-            <h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>
-            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.
-            </p>
-            <a href="#" class="card-link">Card link</a>
-            <a href="#" class="card-link">Another link</a>
+            <h5 class="card-title">Explores </h5>
+
+            <h6 class="card-subtitle mb-2 text-muted">Games </h5>
+            <a class="dropdown-item" href="https://datduyng.github.io/networkflow/simulation.html"> 
+              <img src="https://user-images.githubusercontent.com/35666615/52318190-de194580-2988-11e9-929d-09aec2551b13.png" height="30" width="30" >Networkflow
+            </a>
+
+            <h6 class="card-subtitle mb-2 text-muted">Productivities </h5>
+            <a class="dropdown-item" href="https://abcrnn.github.io/"> 
+              <img src="https://camo.githubusercontent.com/4cc582c0fd755bdb014ea95b34f944e40c73d46e/68747470733a2f2f616263726e6e2e6769746875622e696f2f696d672f616263526e6e5f6c6f676f2e706e67" height="30" width="30" >
+              abcRNN
+            </a>
           </div>
         </div>
+<!--         End explore section -->
 
 
 
