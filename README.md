@@ -1,7 +1,16 @@
 # mediabook
 
-# Framwork and ref
+# Why? 
 
+# What? 
+- Main features: 
+  - Create account
+  - Make posts (ideas/projects)
+  - Comment on post
+  - Create friend connection(add/un friend)
+  - Share post on other social site. 
+  - view user activity
+# Framwork and ref
 - Typeahead 
   - Docs: http://www.runningcoder.org/jquerytypeahead/
   - Official Docs: https://github.com/twitter/typeahead.js/blob/master/doc/jquery_typeahead.md#custom-events
