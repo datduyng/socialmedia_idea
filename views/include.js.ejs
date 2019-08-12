@@ -32,11 +32,71 @@
 
 
 <script>  
+
+function notificationToast (message, toast_type='info', showDuration='300'){
+//https://codeseven.github.io/toastr/demo.html
+  toastr[toast_type](message)
+
+  toastr.options = {
+    "closeButton": true,
+    "debug": false,
+    "newestOnTop": true,
+    "progressBar": false,
+    "positionClass": "toast-top-right",
+    "preventDuplicates": false,
+    "onclick": null,
+    "showDuration": showDuration,
+    "hideDuration": "1000",
+    "timeOut": "5000",
+    "extendedTimeOut": "1000",
+    "showEasing": "swing",
+    "hideEasing": "linear",
+    "showMethod": "fadeIn",
+    "hideMethod": "fadeOut"
+  }
+}
+
+
 $.fn.extend({
     toggleHtml: function(a, b){
         return this.html(this.html() == b ? a : b);
     }
 });
+
+//https://stackoverflow.com/questions/17710147/image-convert-to-base64
+File.prototype.convertToBase64 = function(){
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onloadend = function (e) {
+      console.log('e', e);
+        let img_struct = e.target.result.match(  /(data:image\/)(.*)(;base64,)(.*)/m  );
+        let valid_type = ['png', 'gif', 'jpeg', 'jpg'];
+        let err_msg = `Please submit a valid file type (${valid_type.toString()})`;
+        if(!img_struct){
+          notificationToast(err_msg, "error", 1000);
+          resolve({
+            error: `Invalid file of type ${e.target.result.slice(0, 50)} is not supported`
+          });
+        }else{
+          let type = img_struct[2].toLowerCase();
+          let full_type = img_struct[1] + img_struct[2] + img_struct[3];
+          let base64 = img_struct[4];
+
+          if(!valid_type.includes(type) ){
+            notificationToast(err_msg, "error", 1000);
+          }
+          resolve({
+            fileName: this.name,
+            type: type, 
+            full_type: full_type,
+            base64: base64,
+            error: e.target.error
+          });
+        }
+    };   
+    reader.readAsDataURL(this);
+  }.bind(this)); 
+};
   
 function getUserLocation(callback) {
   console.log('called');

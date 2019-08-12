@@ -314,12 +314,13 @@ body,html{
     <div class='row justify-content-center'>
 
       <div class='col-md-6'>
-        <div class='my-3 p-3 rounded box-shadow'>
+        <div class='my-3 p-3 rounded box-shadow bg-white rounded'>
           <h6 class="border-bottom border-gray pb-2 mb-0">IdeaChain recent post</h6>
           <br>
-          <div id='feature-post' class="white-deck">
-            <div class='grid-sizer col-md-6'></div>
-            <div class="gutter-sizer"></div>
+          <!-- <div id='feature-post' class="card-deck"> -->
+		  <transition-group id='feature-post' name="list-complete" class="list-complete"tag="section">
+<!--             <div class='grid-sizer col-md-6'></div> -->
+            <!-- <div class="gutter-sizer"></div> -->
             <!--- >>>>>>Post-->
             <post-item v-for="(post, index) in posts"
                        :post_id='post.post_id'
@@ -327,12 +328,15 @@ body,html{
                        :username='post.name'
                        :content='post.content'
                        :tags = 'post.tags'
-                       :create_timestamp='post.create_timestamp'
-                       :bootstrap_col="'col-lg-6'"
-                       :user_functionality='false'>
+					   :create_timestamp='post.create_timestamp'
+					   :creator_avatar='post.creator_avatar'
+					   :user_functionality='false'
+					   :card_class="'list-complete-item white-panel mr-1'"
+					   :key='post.post_id'>
             </post-item>
             <!--- <<<<<<<Post-->
-          </div>
+		  <!-- </div> -->
+        </transition-group>
         </div>
 
       </div>
@@ -340,7 +344,7 @@ body,html{
 
       <!--Top User -->
       <div class='col-md-3'>
-        <div class="my-3 p-3 bg-white rounded box-shadow border border-dark">
+        <div class="my-3 p-3 bg-white rounded box-shadow">
           <h6 class="border-bottom border-gray pb-2 mb-0">Top IdeaChainer</h6>
           <div class="media text-muted pt-3 list-item">
            <img src="https://cdn.glitch.com/81be7dd8-00c3-4077-b658-479b65c93098%2Ffeac67ed-a868-46f6-a867-7c69d772d51b_200x200%20(4).png?v=1565189956579" alt="" class="bd-placeholder-img mr-2 rounded" width="32" height="32">
@@ -354,7 +358,7 @@ body,html{
 
       <!--Recent Activity -->
       <div id='index-page-recent-activity' class='col-md-3'>
-       <div class="my-3 p-3 bg-white rounded box-shadow border border-dark">
+       <div class="my-3 p-3 bg-white rounded box-shadow">
         <h6 class="border-bottom border-gray pb-2 mb-0">Feeds</h6>
 
         <div class="list-wrapper">

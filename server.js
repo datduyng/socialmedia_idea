@@ -32,7 +32,6 @@ class Post{
   }
 }
 
-
 // init project
 'use strict';
 var express = require('express');
@@ -43,7 +42,7 @@ var fs = require('fs');
 var Promise = require('promise');
 var moment = require('moment');
 require('moment-timezone');
-moment.tz.setDefault();//set default timezone to local
+// moment.tz.setDefault();//set default timezone to local
 var nodemailer = require('nodemailer');
 
 const APP_BASE = 'https://ideabook.glitch.me/';
@@ -51,6 +50,9 @@ const DB_PATH = './.data/sqlite.db';
 var exists = fs.existsSync(DB_PATH);
 var sqlite3 = require('sqlite3').verbose();
 var db = new sqlite3.Database(DB_PATH);
+const FormData = require('form-data');
+const Axios = require('axios').default;
+var md5 = require('md5');
 
 db.allAsync = function (query, param) {
     var that = this;
@@ -66,6 +68,22 @@ db.allAsync = function (query, param) {
     });
 };
 
+db.runAsync = function (query, param) {
+  var that = this;
+  return new Promise(function (resolve, reject) {
+      that.run(query, param, function (err) {
+          if (err){
+            printDetailError({}, err);
+            reject(err.message);
+          }
+          else{
+            resolve(this);
+          }
+            
+      });
+  });
+};
+
 
 var transporter = nodemailer.createTransport({
  service: 'gmail',
@@ -74,9 +92,6 @@ var transporter = nodemailer.createTransport({
         pass: 'grpatjjdptldjlkc'
     }
 });
-  
-
-
 
 // var G.session;
 app.set('view engine', 'ejs');
@@ -97,6 +112,36 @@ app.use(function(req, res, next) {
     next();
 });
 
+async function uploadImageToDB(image_url, image_type='user_avatar', image_host='imgbb', detail_data='{}'){
+  let q = `INSERT INTO images (image_url, image_type, image_host, detail_data) 
+              VALUES (?, ?, ?, ?)`;
+  let qparams = [image_url, image_type, image_host, detail_data]; 
+  return (await db.runAsync(q, qparams).catch((ae) => {throw new Error(ae)}) );
+}
+
+//https://github.com/axios/axios/issues/1006#issuecomment-320165427
+async function uploadImage(base64, image_type='post', image_host='imgbb'){
+  let CLIENT_API_KEY = "584a11ac80e31453679a753c749a787e";
+  let api_imgbb = `https://api.imgbb.com/1/upload?key=${CLIENT_API_KEY}`;
+  var bodyData = new FormData();
+  bodyData.append('image', base64);
+
+  var response = await Axios({
+    method: 'post',
+    url: api_imgbb,
+    headers: bodyData.getHeaders(),
+    data: bodyData
+  }).catch(error => {
+    if(error)
+      throw new Error(JSON.stringify(response.error) );
+  });
+  response = response.data.data;
+  response.run_response = await uploadImageToDB(response.image.url, image_type, image_host, JSON.stringify(response));
+  console.log('response', response);
+  return response;
+}
+
+
 app.get('/', function(request, response) {
   G.session = request.session; 
   var message = (G.session.message)?G.session.message:"";
@@ -105,7 +150,6 @@ app.get('/', function(request, response) {
   }
   response.render(__dirname + '/views/index.ejs', {G:G, message:message});
 });
-
 
 app.post('/submitUserFeedback', function(request, response) {
   var params = request.body;
@@ -141,21 +185,24 @@ app.post('/submitUserFeedback', function(request, response) {
 **********************************************************************/
 app.get('/signup', function(request, response) {
   response.render(__dirname + '/views/signup.ejs', {G:G});
-}).post('/signup', function(request, response) {
+}).post('/signup', async function(request, response) {
   G.session = request.session;
   var params = request.body;
   sanityCheck(request, response, params);
-  // console.log('param', param);
-  db.run("INSERT INTO users (username, password, email) VALUES (?, ?, ?)", 
-         [params.username, params.password, params.email], function(error, results){
+
+  var default_avatar_url = `https://ui-avatars.com/api/?name=${params.username}`;
+  var upload_response = (await uploadImage(default_avatar_url, 'user_avatar', 'ui-avatars.com').catch((ae) => { throw new Error(ae) }) );
+
+  db.run("INSERT INTO users (username, password, email, user_avatar_img__id) VALUES (?, ?, ?, ?)", 
+         [params.username, params.password, params.email, upload_response.run_response.lastID], function(error, results){
     if(error){
       printDetailError(request, error);
       response.status(500).send(error);
     }else{
       G.session.email = params.email; 
-      G.session.user = params.username;
+      G.session.username = params.username;
       G.session.user_id = this.lastID;
-      console.log('signup ', G.session);
+      G.session.user_avatar = default_avatar_url;
       let q = `INSERT INTO full_log_user_action (user__id, action_target_type, action_target__id, user_action_type__id)
                 VALUES (?, 'u2s', ?, 8)`;//8: joined IdeaChain
       db.run(q, [G.session.user_id, G.session.user_id], (err) => {if(err){throw new Error(err);}});
@@ -173,9 +220,13 @@ app.post('/signin', function(request, response) {
   var param = request.body;
   G.session = request.session;
 
-  
-  db.all("SELECT id, email, username, password FROM users WHERE email=? AND password=?", 
-         [param.email, param.password], (error, results) => {
+  let q = `
+    SELECT u.id, u.email, u.username, password, i.image_url AS user_avatar
+    FROM users u
+      LEFT JOIN images i ON u.user_avatar_img__id=i.id
+    WHERE u.email=? AND 
+          u.password=?`; 
+  db.all(q, [param.email, param.password], (error, results) => {
     if(error){
       console.log("Fail signin", error);
       response.status(500).send(error);
@@ -188,6 +239,7 @@ app.post('/signin', function(request, response) {
         G.session.email = param.email; 
         G.session.username = results[0].username;
         G.session.user_id = results[0].id;
+        G.session.user_avatar = (results[0].user_avatar)?(results[0].user_avatar):`https://www.gravatar.com/avatar/${md5(G.session.email.trim())}`;
         console.log('singin sess', G.session);
         response.redirect(301, "/dashboard");
       }
@@ -274,11 +326,12 @@ app.get('/getFeaturePost', (request, response) => {
   var params = request.query;
   
   var q = `
-    SELECT p.id as post_id, p.user__id AS user_id, u.username as name, p.title as title, 
-       p.content as content, p.description as description, p.create_timestamp as create_timestamp,
-       p.last_modified_timestamp as last_modified_timestamp
+  SELECT p.id as post_id, p.user__id AS user_id, u.username as name, p.title as title, 
+  p.content as content, p.description as description, p.create_timestamp as create_timestamp,
+  p.last_modified_timestamp as last_modified_timestamp, i2.image_url as creator_avatar
     FROM posts p
-    INNER JOIN users u ON p.user__id=u.id
+      INNER JOIN users u ON p.user__id=u.id
+      LEFT JOIN images i2 ON u.user_avatar_img__id=i2.id
     ORDER BY create_timestamp DESC`;
   if (params.limit){
     q += ` LIMIT ${params.limit}`;
@@ -312,12 +365,13 @@ app.get('/dashboard/getPosts', async (request, response) => {
     G.session = request.session;
     var params = request.query;
     var q = `
-      SELECT p.id as post_id, p.user__id AS user_id, u.username as name, p.title as title, 
-         p.content as content, p.description as description, p.create_timestamp as create_timestamp,
-         p.last_modified_timestamp as last_modified_timestamp
+    SELECT p.id as post_id, p.user__id AS user_id, u.username as name, p.title as title, 
+    p.content as content, p.description as description, p.create_timestamp as create_timestamp,
+    p.last_modified_timestamp as last_modified_timestamp, i.image_url as thumbnail, i2.image_url as creator_avatar
       FROM posts p
-      INNER JOIN users u ON p.user__id=u.id
-      -- WHERE p.user__id != ? 
+        INNER JOIN users u ON p.user__id=u.id
+        LEFT JOIN images i ON p.thumbnail__id=i.id
+        LEFT JOIN images i2 ON u.user_avatar_img__id=i2.id
       ORDER BY create_timestamp DESC`;
     if (params.limit){
       q += ` LIMIT ${params.limit}`;
@@ -331,7 +385,6 @@ app.get('/dashboard/getPosts', async (request, response) => {
       posts : posts, 
       stars : stars
     };
-    // console.log('getpost dashboard', data);
     response.send(JSON.stringify(data));
     
   } catch(async_error) {
@@ -385,7 +438,6 @@ app.get('/personalinfo', (request, response) => {
                          isfriend : isfriend,
                          total_friend: friendList.length,
                         };
-        // console.log('data ejs', data);
         response.render(__dirname + '/views/personalinfo.ejs', data);
       });
 
@@ -492,7 +544,14 @@ app.post('/personalinfo/update', async (request, response) => {
   var person = new PersonInfo(params.fullname, params.status, 
                               params.avatar_url, params.wallpaper_url);
   var q = "UPDATE users SET personal_info=?, fullname=? WHERE id=?";
-  db.all(q, [JSON.stringify(person), params.fullname, G.session.user_id], async (error, results) => {
+  var qparams = [JSON.stringify(person), params.fullname, G.session.user_id];
+  if(params.user_avatar){//if post has thumbnail
+    var upload_response = await uploadImage(params.user_avatar.base64, 'user_avatar');
+    q = "UPDATE users SET personal_info=?, fullname=?, user_avatar_img__id=? WHERE id=?";
+    G.session.user_avatar = upload_response.image.url;
+    qparams = [JSON.stringify(person), params.fullname, upload_response.run_response.lastID, G.session.user_id];
+  }
+  db.all(q, qparams, async (error, results) => {
     if(error){
       printDetailError(request, error);      
       response.status(500).send(error);
@@ -500,20 +559,16 @@ app.post('/personalinfo/update', async (request, response) => {
       
       //update user interest
       var user_interest = params.user_interest;
-      // console.log('user_interest', user_interest);
       q = `DELETE FROM user_interest WHERE user__id=?`;
       await db.allAsync(q, [G.session.user_id]);
       
       //addd all interest in a list
       for(var i=0; i<user_interest.length; i++){
-        // var _i = [i];
-        // console.log('update interest', user_interest[i]);
         q = `SELECT id, user_interest_select__id 
               FROM user_interest WHERE user__id=? AND 
                                        user_interest_select__id=?`;
         //see if it already added
         let existed_user_interest = await db.allAsync(q, [G.session.user_id, user_interest[i]]);
-        // console.log("interest", existed_user_interest);
         //if not added then add it
         let qparams = [G.session.user_id, user_interest[i]];
         q = `INSERT INTO user_interest(user__id, user_interest_select__id)
@@ -561,7 +616,6 @@ app.get('/admin/editor', (request, response) => {
 app.get('/admin/query', (request, response) => {
   G.session = request.session;
   var params = request.query;
-  // console.log('params', params);
   db.all(params.query, [], (error, results) => {
     if(error){
       printDetailError(request, error);
@@ -578,7 +632,7 @@ app.get('/admin/query', (request, response) => {
 
 app.get('/i', async (request, response) => {
   console.log(' /i request', request.ip, request.ips);
-  moment.tz.guess(true);
+  // moment.tz.guess(true);
   G.session = request.session;
   var params = request.query;
   
@@ -586,12 +640,9 @@ app.get('/i', async (request, response) => {
   if(G.session.user_id == null){//if session does not exist then query for the post creator
     let q = `SELECT user__id FROM posts WHERE id=?`;
     user_id = (await db.allAsync(q, [params.post_id]).catch((ae) => { throw new Error(ae) }))[0].user__id;
-    
-    console.log('in user_id', user_id);
   }else{
     user_id = G.session.user_id;
   }
-  console.log('user_id', user_id);
   
   //check user viewing status
   let q = `
@@ -603,7 +654,6 @@ app.get('/i', async (request, response) => {
         user_action_type__id=1`;
   if(G.session.user_id){//viewer need to be in our system
     let view_status = (await db.allAsync(q, [user_id, params.post_id]).catch((ae) => { throw new Error(ae) }))[0].count;
-    console.log("view count", view_status);
     if(!view_status){//if this is the first time user is viewing
       q = `INSERT INTO full_log_user_action (user__id, action_target_type, action_target__id, user_action_type__id)
             VALUES (?, 'u2p', ?, 1)`;
@@ -616,12 +666,14 @@ app.get('/i', async (request, response) => {
       
     }
   }
-
   //query the post information then send html
-  q = `SELECT id, post_type, user__id as user_id, title, 
-              content, description, create_timestamp, 
-              last_modified_timestamp FROM posts 
-        WHERE id=?`;
+  q = `SELECT p.id, p.post_type, p.user__id as user_id, u.username, p.title, 
+              p.content, p.description, p.create_timestamp, 
+              p.last_modified_timestamp, i.image_url as thumbnail
+        FROM posts p
+          LEFT JOIN images i ON p.thumbnail__id=i.id
+          INNER JOIN users u ON p.user__id=u.id
+        WHERE p.id=?`;
   db.all(q, [params.post_id], (error, post) => {
     let q = `SELECT t.id, t.tag 
               FROM post_tag it 
@@ -701,26 +753,33 @@ app.post('/addFriend', async (request, response) => {
       printDetailError(request, error);
       response.status(500).send(error.message);
     }else{
-      
-      
-      
+
       response.status(200).send(JSON.stringify(rresponse));
     }
   });
 });
 
 
-app.post('/createIdea', (request, response) => {
+
+app.post('/createIdea', async (request, response) => {
   G.session = request.session;
   
   var params = request.body; 
-  
-  
+
   var _post = new Post(params.content.pin, params.content.text);
-  var q = `INSERT INTO posts (user__id, post_type, title, content) 
+  
+  let q = `INSERT INTO posts (user__id, post_type, title, content) 
            VALUES (?, ?, ?, ?)`;
-  db.run(q, [G.session.user_id, 1, params.title, _post.toString()], 
-        function(error) {
+  let qparams = [G.session.user_id, 1, params.title, _post.toString()];
+
+  if(params.thumbnail){//if post has thumbnail
+    var upload_response = await uploadImage(params.thumbnail.base64);
+    qparams = [G.session.user_id, 1, params.title, _post.toString(), upload_response.run_response.lastID];
+    q = `INSERT INTO posts (user__id, post_type, title, content, thumbnail__id) 
+            VALUES (?, ?, ?, ?, ?)`; 
+  }
+
+  db.run(q, qparams, function(error) {
     if(error){
       printDetailError(request, error);
       
@@ -752,7 +811,6 @@ app.post('/createIdea', (request, response) => {
           if(___error){
             return response.status(500).send(___error.message) ; 
           }
-          // console.log(`/i?post_id=${post_id}`);
           // response.redirect(200, '/');
           // response.redirect(301, `/i?post_id=${post_id}`);
           return response.status(200).send(JSON.stringify(___results));
