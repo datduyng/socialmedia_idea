@@ -1,7 +1,16 @@
 # mediabook
 
-# Framwork and ref
+# Why? 
 
+# What? 
+- Main features: 
+  - Create account
+  - Make posts (ideas/projects)
+  - Comment on post
+  - Create friend connection(add/un friend)
+  - Share post on other social site. 
+  - view user activity
+# Framwork and ref
 - Typeahead 
   - Docs: http://www.runningcoder.org/jquerytypeahead/
   - Official Docs: https://github.com/twitter/typeahead.js/blob/master/doc/jquery_typeahead.md#custom-events
@@ -24,12 +33,4 @@
 - https://crunchify.com/list-of-all-social-sharing-urls-for-handy-reference-social-media-sharing-buttons-without-javascript/
 
 
-- gmail app pass: grpatjjdptldjlkc
-
-
-# Image managing service
-- https://api.imgbb.com/
-
-```
-curl --location --request POST "https://api.imgbb.com/1/upload?key=584a11ac80e31453679a753c749a787e" --form "image=R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-```
+- app pass: grpatjjdptldjlkc
