@@ -1,4 +1,4 @@
-# mediabook
+# IdeaChain
 - Web demo. [here](http://ideachain.glitch.me/)
 # Why? 
 - Many Social media site provide an open place where most people share a good side of their life. Ideas often get hold back to be shared on Social media. Individual often afraids that someone is up to critique and refuse his or her idea. => most social media are non-productive environment. **Goal** is to create a productive social media. 
