@@ -1,5 +1,7 @@
 # IdeaChain
 - Web demo. [here](http://ideachain.glitch.me/)
+- github. [here]()
+
 # Why? 
 - Many Social media site provide an open place where most people share a good side of their life. Ideas often get hold back to be shared on Social media. Individual often afraids that someone is up to critique and refuse his or her idea. => most social media are non-productive environment. **Goal** is to create a productive social media. 
 
@@ -15,6 +17,9 @@ IdeaChain(our) : a site that helps connect innovative mind and boost productivit
   - Create friend connection(add/un friend)
   - Share post on other social site. 
   - view user activity
+  
+  
+  
 # Framwork and ref
 - Typeahead 
   - Docs: http://www.runningcoder.org/jquerytypeahead/
@@ -26,7 +31,8 @@ IdeaChain(our) : a site that helps connect innovative mind and boost productivit
   - Bootstrap 4 design: https://colorlib.com/polygon/concept/
   - Actual nav: https://startbootstrap.com/previews/sb-admin/
   
-  
+# sql debug app link. 
+- https://s.codepen.io/datduyng/debug/KjObee/VJkxxOKZaWDk
 
 # tag 
 # References 
@@ -36,6 +42,4 @@ IdeaChain(our) : a site that helps connect innovative mind and boost productivit
 
 # Social Media Sharing
 - https://crunchify.com/list-of-all-social-sharing-urls-for-handy-reference-social-media-sharing-buttons-without-javascript/
-
-
-- app pass: grpatjjdptldjlkc
+- gmail app pass: grpatjjdptldjlkc
