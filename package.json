@@ -16,7 +16,7 @@
     "ejs": "^1.0.0",
     "express-session": "^1.16.1",
     "promise": "^8.0.3",
-    "moment": "^2.24.0",
+    "moment": "^2.29.2",
     "moment-timezone": "^0.5.26",
     "nodemailer": "^6.3.0",
     "form-data": "^2.5.0",
